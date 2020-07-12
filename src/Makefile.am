@@ -45,6 +45,8 @@
 #
 ################################################################################
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 bin_PROGRAMS = es40 es40_idb es40_lss es40_lsm es40_cfg
 
 es40_SOURCES = AliM1543C.cpp \

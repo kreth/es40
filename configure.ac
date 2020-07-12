@@ -45,8 +45,9 @@
 AC_PREREQ(2.61)
 AC_INIT(es40, 0.18+, iamcamiel@gmail.com)
 AC_CONFIG_SRCDIR([src/Flash.cpp])
-AM_CONFIG_HEADER([src/config.h])
-AM_INIT_AUTOMAKE(es40, 0.18+)
+AC_CONFIG_HEADER([src/config.h])
+AC_CONFIG_MACRO_DIRS([m4])
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CXX
