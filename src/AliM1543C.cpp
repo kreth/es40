@@ -805,7 +805,7 @@ void CAliM1543C::toy_write(u32 address, u8 data)
 u8 CAliM1543C::pit_read(u32 address)
 {
 
-  //printf("PIT Read: %02" LL "x \n",address);
+  //printf("PIT Read: %02" PRIx64 " \n",address);
   u8  data;
   data = 0;
   return data;
@@ -817,7 +817,7 @@ u8 CAliM1543C::pit_read(u32 address)
 void CAliM1543C::pit_write(u32 address, u8 data)
 {
 
-  //printf("PIT Write: %02" LL "x, %02x \n",address,data);
+  //printf("PIT Write: %02" PRIx64 ", %02x \n",address,data);
   if(address == 3)
   { // control
     if(data != 0)
@@ -995,7 +995,7 @@ u8 CAliM1543C::pic_read(int index, u32 address)
 
 #ifdef DEBUG_PIC
   if(pic_messages)
-    printf("%%PIC-I-READ: read %02x from port %"LL "d on PIC %d\n", data,
+    printf("%%PIC-I-READ: read %02x from port %" PRId64 " on PIC %d\n", data,
            address, index);
 #endif
   return data;
@@ -1060,7 +1060,7 @@ void CAliM1543C::pic_write(int index, u32 address, u8 data)
   int op;
 #ifdef DEBUG_PIC
   if(pic_messages)
-    printf("%%PIC-I-WRITE: write %02x to port %"LL "d on PIC %d\n", data,
+    printf("%%PIC-I-WRITE: write %02x to port %" PRId64 " on PIC %d\n", data,
            address, index);
 #endif
   switch(address)
@@ -1227,14 +1227,14 @@ int CAliM1543C::SaveState(FILE* f)
   long  ss = sizeof(state);
   int   res;
 
-  if(res = CPCIDevice::SaveState(f))
+  if((res = CPCIDevice::SaveState(f)) != 0)
     return res;
 
   fwrite(&ali_magic1, sizeof(u32), 1, f);
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&ali_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes saved.\n", devid_string, ss);
   return 0;
 }
 
@@ -1249,7 +1249,7 @@ int CAliM1543C::RestoreState(FILE* f)
   int     res;
   size_t  r;
 
-  if(res = CPCIDevice::RestoreState(f))
+  if((res = CPCIDevice::RestoreState(f)) != 0)
     return res;
 
   r = fread(&m1, sizeof(u32), 1, f);
@@ -1265,7 +1265,7 @@ int CAliM1543C::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -1278,7 +1278,7 @@ int CAliM1543C::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -1298,7 +1298,7 @@ int CAliM1543C::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes restored.\n", devid_string, ss);
   return 0;
 }
 

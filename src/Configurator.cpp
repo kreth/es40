@@ -194,7 +194,7 @@ CConfigurator::CConfigurator(class CConfigurator*  parent, char*  name,
     int state_start = 0;
     int line = 1;
     int col = 1;
-    for(int i = 0; i < textlen; i++, q++, col++)
+    for(size_t i = 0; i < textlen; i++, q++, col++)
     {
       if(*q == 0x0a)
       {

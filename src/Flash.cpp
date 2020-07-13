@@ -369,7 +369,7 @@ int CFlash::SaveState(FILE* f)
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&flash_magic2, sizeof(u32), 1, f);
-  printf("flash: %d bytes saved.\n", ss);
+  printf("flash: %ld bytes saved.\n", ss);
   return 0;
 }
 
@@ -396,7 +396,7 @@ int CFlash::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("flash: unexpected end of file!\n");
@@ -409,7 +409,7 @@ int CFlash::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("flash: unexpected end of file!\n");
@@ -429,7 +429,7 @@ int CFlash::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("flash: %d bytes restored.\n", ss);
+  printf("flash: %ld bytes restored.\n", ss);
   return 0;
 }
 

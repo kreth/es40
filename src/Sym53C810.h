@@ -58,8 +58,8 @@
  *      Created as a spinoff from 53C895 controller, as we couldn't get
  *      that chip to work properly with the OpenVMS driver.
  **/
-#if !defined(INCLUDED_SYM53C810_H_)
-#define INCLUDED_SYM53C810_H_
+#if !defined(INCLUDED_SYM53C810_H)
+#define INCLUDED_SYM53C810_H
 
 #include "PCIDevice.h"
 #include "DiskController.h"

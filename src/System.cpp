@@ -177,7 +177,7 @@
  *       "  The system address space is divided into two parts: system 
  *        memory and PIO. This division is indicated by physical memory bit
  *        <43> = 1 for PIO accesses from the CPU [...] In general, bits 
- *        <42:35> are don’t cares if bit <43> is asserted. [...] The 
+ *        <42:35> are don't cares if bit <43> is asserted. [...] The 
  *        Typhoon Cchip supports 32GB of system memory (35 bits total).  "
  *   2. Added support for Ctrl+C and panic.
  *
@@ -400,7 +400,8 @@ CSystem::~CSystem()
 {
   int i;
 
-  printf("Freeing memory in use by system...\n");
+  printf("%s(%s): Freeing memory in use by system...\n",
+         myCfg->get_myName(), myCfg->get_myValue());
 
   for(i = 0; i < iNumComponents; i++)
     delete acComponents[i];
@@ -481,8 +482,8 @@ int CSystem::RegisterMemory(CSystemComponent*  component, int index, u64 base,
     // check for overlaps
     if(base >= asMemories[i]->base && 
        base <= (asMemories[i]->base + asMemories[i]->length - 1)) {
-      printf("WARNING: Start address for %s/%d (%016" LL "x-%016" LL "x)\n"
-	     "  is within memory range of %s/%d (%016" LL "x-%016" LL "x).\n", 
+      printf("WARNING: Start address for %s/%d (%016" PRIx64 "-%016" PRIx64 ")\n"
+	     "  is within memory range of %s/%d (%016" PRIx64 "-%016" PRIx64 ").\n", 
 	     component->devid_string, 
 	     index, base, base + length - 1,
 	     asMemories[i]->component->devid_string, asMemories[i]->index, 
@@ -491,8 +492,8 @@ int CSystem::RegisterMemory(CSystemComponent*  component, int index, u64 base,
 
     if(base + length - 1 >= asMemories[i]->base && 
        base + length - 1 <= (asMemories[i]->base + asMemories[i]->length -1)) {
-      printf("WARNING: End address for %s/%d (%016" LL "x-%016" LL "x)\n"
-	     "  is within memory range of %s/%d (%016" LL "x-%016" LL "x).\n", 
+      printf("WARNING: End address for %s/%d (%016" PRIx64 "-%016" PRIx64 ")\n"
+	     "  is within memory range of %s/%d (%016" PRIx64 "-%016" PRIx64 ").\n", 
 	     component->devid_string, 
 	     index, base, base + length - 1,
 	     asMemories[i]->component->devid_string, asMemories[i]->index,
@@ -547,7 +548,7 @@ void CSystem::Run()
   printf("Physical Address Size     Device/Index\n");
   printf("---------------- -------- -------------------------\n"); 
   for(i=0;i<iNumMemories;i++) {
-    printf("%016" LL "x %8x %s/%d\n",asMemories[i]->base,asMemories[i]->length, asMemories[i]->component->devid_string,asMemories[i]->index); 
+    printf("%016" PRIx64 " %8x %s/%d\n",asMemories[i]->base,asMemories[i]->length, asMemories[i]->component->devid_string,asMemories[i]->index); 
   }
 #endif //defined(DUMP_MEMMAP)
 
@@ -568,10 +569,10 @@ void CSystem::Run()
       acComponents[i]->check_state();
 #if !defined(HIDE_COUNTER)
 #if defined(PROFILE)
-    printf("%d | %016"LL "x | %"LL "d profiled instructions.  \r", k,
+    printf("%d | %016" PRIx64 " | %" PRId64 " profiled instructions.  \r", k,
            acCPUs[0]->get_pc(), profiled_insts);
 #else //defined(PROFILE)
-    printf("%d | %016"LL "x\r", k, acCPUs[0]->get_pc());
+    printf("%d | %016" PRIx64 "\r", k, acCPUs[0]->get_pc());
 #endif //defined(PROFILE)
 #endif //defined(HIDE_COUNTER)
   }
@@ -619,7 +620,7 @@ int CSystem::SingleStep()
   //#if !defined(LS_SLAVE)
   //     if (bHashing)
   //#endif
-  //       printf("%d | %016" LL "x\r",iSSCycles,acCPUs[0]->get_pc());
+  //       printf("%d | %016" PRIx64 "\r",iSSCycles,acCPUs[0]->get_pc());
   //#endif
   //  }
   return 0;
@@ -632,7 +633,7 @@ void CSystem::cpu_lock(int cpuid, u64 address)
 {
   SCOPED_FM_LOCK(cpu_lock_mutex);
 
-  //  printf("cpu%d: lock %" LL "x.   \n",cpuid,address);
+  //  printf("cpu%d: lock %" PRIx64 ".   \n",cpuid,address);
   state.cpu_lock_flags |= (1 << cpuid);
   state.cpu_lock_address[cpuid] = address;
 }
@@ -668,14 +669,14 @@ void CSystem::cpu_break_lock(int cpuid, CSystemComponent* source)
  * is indicated by physical memory bit <43> = 1 for PIO accesses from the CPU, and
  * by the PTP bit in the window registers for PTP accesses from the Pchip. While the operating
  * system may choose bit <40> instead of bit <43> to represent PIO space, bit <43>
- * is used throughout this chapter. In general, bits <42:35> are don’t cares if bit <43> is
+ * is used throughout this chapter. In general, bits <42:35> are don't cares if bit <43> is
  * asserted.
  *
  * There is 16GB of PIO space available on the 21272 chipset with 8GB assigned to each
  * Pchip. The Pchip supports up to bit <34> (35 bits total) of system address. However, the
  * Version 1 Cchip only supports 4GB of system memory (32 bits total). As described in
  * Chapter 6, the CAPbus protocol between the Pchip and Cchip does support up to bit
- * <34>, as does the Cchip’s interface to the CPU. The Typhoon Cchip supports 32GB of
+ * <34>, as does the Cchip's interface to the CPU. The Typhoon Cchip supports 32GB of
  * system memory (35 bits total).
  *
  * The system address space is divided as shown in the following table:
@@ -686,7 +687,7 @@ void CSystem::cpu_break_lock(int cpuid, CSystemComponent* source)
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | System memory     |    4GB | 000.0000.0000 - 000.FFFF.FFFF | Cacheable and prefetchable.     |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          | 8188GB | 001.0000.0000 - 7FF.FFFF.FFFF | —                               |
+ * | Reserved          | 8188GB | 001.0000.0000 - 7FF.FFFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip0 PCI memory |    4GB | 800.0000.0000 - 800.FFFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -694,11 +695,11 @@ void CSystem::cpu_break_lock(int cpuid, CSystemComponent* source)
  * |                   |        |                               | valid in quadword access.       |
  * |                   |        |                               | 16MB accessible.                |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |    1GB | 801.4000.0000 - 801.7FFF.FFFF | —                               |
+ * | Reserved          |    1GB | 801.4000.0000 - 801.7FFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip0 CSRs       |  256MB | 801.8000.0000 - 801.8FFF.FFFF | addr<5:0> = 0. Quadword access. |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |  256MB | 801.9000.0000 - 801.9FFF.FFFF | —                               |
+ * | Reserved          |  256MB | 801.9000.0000 - 801.9FFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Cchip CSRs        |  256MB | 801.A000.0000 - 801.AFFF.FFFF | addr<5:0> = 0. Quadword access. |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -706,8 +707,8 @@ void CSystem::cpu_break_lock(int cpuid, CSystemComponent* source)
  * |                   |        |                               | in quadword access must be      |
  * |                   |        |                               | identical.                      |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |  768MB | 801.C000.0000 - 801.EFFF.FFFF | —                               |
- * | Reserved          |  128MB | 801.F000.0000 - 801.F7FF.FFFF | —                               |
+ * | Reserved          |  768MB | 801.C000.0000 - 801.EFFF.FFFF | -                               |
+ * | Reserved          |  128MB | 801.F000.0000 - 801.F7FF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip 0 PCI IACK  |   64MB | 801.F800.0000 - 801.FBFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -715,16 +716,16 @@ void CSystem::cpu_break_lock(int cpuid, CSystemComponent* source)
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip0 PCI conf   |   16MB | 801.FE00.0000 - 801.FEFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |   16MB | 801.FF00.0000 - 801.FFFF.FFFF | —                               |
+ * | Reserved          |   16MB | 801.FF00.0000 - 801.FFFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip1 PCI memory |    4GB | 802.0000.0000 - 802.FFFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |    2GB | 803.0000.0000 - 803.7FFF.FFFF | —                               |
+ * | Reserved          |    2GB | 803.0000.0000 - 803.7FFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip1 CSRs       |  256MB | 803.8000.0000 - 803.8FFF.FFFF | addr<5:0> = 0, quadword access. |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          | 1536MB | 803.9000.0000 - 803.EFFF.FFFF | —                               |
- * | Reserved          |  128MB | 803.F000.0000 - 803.F7FF.FFFF | —                               |
+ * | Reserved          | 1536MB | 803.9000.0000 - 803.EFFF.FFFF | -                               |
+ * | Reserved          |  128MB | 803.F000.0000 - 803.F7FF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip 1 PCI IACK  |   64MB | 803.F800.0000 - 803.FBFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -732,8 +733,8 @@ void CSystem::cpu_break_lock(int cpuid, CSystemComponent* source)
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip1 PCI conf   |   16MB | 803.FE00.0000 - 803.FEFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |   16MB | 803.FF00.0000 - 803.FFFF.FFFF | —                               |
- * | Reserved          | 8172GB | 804.0000.0000 - FFF.FFFF.FFFF | Bits <42:35> are don’t cares if |
+ * | Reserved          |   16MB | 803.FF00.0000 - 803.FFFF.FFFF | -                               |
+ * | Reserved          | 8172GB | 804.0000.0000 - FFF.FFFF.FFFF | Bits <42:35> are don't cares if |
  * |                   |        |                               | bit <43> is asserted.           |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * \endcode
@@ -840,9 +841,9 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
 
       // Unused PCI I/O space
       //      if (source)
-      //        printf("Write to unknown IO port %"LL"x on PCI 0 from %s   \n",a & U64(0x1ffffff),source->devid_string);
+      //        printf("Write to unknown IO port %" PRIx64 " on PCI 0 from %s   \n",a & U64(0x1ffffff),source->devid_string);
       //      else
-      //        printf("Write to unknown IO port %"LL"x on PCI 0   \n",a & U64(0x1ffffff));
+      //        printf("Write to unknown IO port %" PRIx64 " on PCI 0   \n",a & U64(0x1ffffff));
       return;
     }
 
@@ -852,11 +853,11 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
       // Unused PCI I/O space
       if(source)
       {
-        printf("Write to unknown IO port %"LL "x on PCI 1 from %s   \n",
+        printf("Write to unknown IO port %" PRIx64 " on PCI 1 from %s   \n",
                a & U64(0x1ffffff), source->devid_string);
       }
       else
-        printf("Write to unknown IO port %"LL "x on PCI 1   \n",
+        printf("Write to unknown IO port %" PRIx64 " on PCI 1   \n",
                a & U64(0x1ffffff));
       return;
     }
@@ -870,11 +871,11 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
       { // skip legacy video
         if(source)
         {
-          printf("Write to unknown memory %"LL "x on PCI 0 from %s   \n",
+          printf("Write to unknown memory %" PRIx64 " on PCI 0 from %s   \n",
                  a & U64(0xffffffff), source->devid_string);
         }
         else
-          printf("Write to unknown memory %"LL "x on PCI 0   \n",
+          printf("Write to unknown memory %" PRIx64 " on PCI 0   \n",
                  a & U64(0xffffffff));
       }
     }
@@ -885,21 +886,21 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
       // Unused PCI memory space
       if(source)
       {
-        printf("Write to unknown memory %"LL "x on PCI 1 from %s   \n",
+        printf("Write to unknown memory %" PRIx64 " on PCI 1 from %s   \n",
                a & U64(0xffffffff), source->devid_string);
       }
       else
-        printf("Write to unknown memory %"LL "x on PCI 1   \n",
+        printf("Write to unknown memory %" PRIx64 " on PCI 1   \n",
                a & U64(0xffffffff));
       return;
     }
 
 #ifdef DEBUG_UNKMEM
     if(source)
-      printf("Write to unknown memory %"LL "x from %s   \n", a,
+      printf("Write to unknown memory %" PRIx64 " from %s   \n", a,
              source->devid_string);
     else
-      printf("Write to unknown memory %"LL "x   \n", a);
+      printf("Write to unknown memory %" PRIx64 "   \n", a);
 #endif //defined(DEBUG_UNKMEM)
     return;
   }
@@ -927,14 +928,14 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
  * is indicated by physical memory bit <43> = 1 for PIO accesses from the CPU, and
  * by the PTP bit in the window registers for PTP accesses from the Pchip. While the operating
  * system may choose bit <40> instead of bit <43> to represent PIO space, bit <43>
- * is used throughout this chapter. In general, bits <42:35> are don’t cares if bit <43> is
+ * is used throughout this chapter. In general, bits <42:35> are don't cares if bit <43> is
  * asserted.
  *
  * There is 16GB of PIO space available on the 21272 chipset with 8GB assigned to each
  * Pchip. The Pchip supports up to bit <34> (35 bits total) of system address. However, the
  * Version 1 Cchip only supports 4GB of system memory (32 bits total). As described in
  * Chapter 6, the CAPbus protocol between the Pchip and Cchip does support up to bit
- * <34>, as does the Cchip’s interface to the CPU. The Typhoon Cchip supports 32GB of
+ * <34>, as does the Cchip's interface to the CPU. The Typhoon Cchip supports 32GB of
  * system memory (35 bits total).
  *
  * The system address space is divided as shown in the following table:
@@ -945,7 +946,7 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | System memory     |    4GB | 000.0000.0000 - 000.FFFF.FFFF | Cacheable and prefetchable.     |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          | 8188GB | 001.0000.0000 - 7FF.FFFF.FFFF | —                               |
+ * | Reserved          | 8188GB | 001.0000.0000 - 7FF.FFFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip0 PCI memory |    4GB | 800.0000.0000 - 800.FFFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -953,11 +954,11 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
  * |                   |        |                               | valid in quadword access.       |
  * |                   |        |                               | 16MB accessible.                |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |    1GB | 801.4000.0000 - 801.7FFF.FFFF | —                               |
+ * | Reserved          |    1GB | 801.4000.0000 - 801.7FFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip0 CSRs       |  256MB | 801.8000.0000 - 801.8FFF.FFFF | addr<5:0> = 0. Quadword access. |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |  256MB | 801.9000.0000 - 801.9FFF.FFFF | —                               |
+ * | Reserved          |  256MB | 801.9000.0000 - 801.9FFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Cchip CSRs        |  256MB | 801.A000.0000 - 801.AFFF.FFFF | addr<5:0> = 0. Quadword access. |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -965,8 +966,8 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
  * |                   |        |                               | in quadword access must be      |
  * |                   |        |                               | identical.                      |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |  768MB | 801.C000.0000 - 801.EFFF.FFFF | —                               |
- * | Reserved          |  128MB | 801.F000.0000 - 801.F7FF.FFFF | —                               |
+ * | Reserved          |  768MB | 801.C000.0000 - 801.EFFF.FFFF | -                               |
+ * | Reserved          |  128MB | 801.F000.0000 - 801.F7FF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip 0 PCI IACK  |   64MB | 801.F800.0000 - 801.FBFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -974,16 +975,16 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip0 PCI conf   |   16MB | 801.FE00.0000 - 801.FEFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |   16MB | 801.FF00.0000 - 801.FFFF.FFFF | —                               |
+ * | Reserved          |   16MB | 801.FF00.0000 - 801.FFFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip1 PCI memory |    4GB | 802.0000.0000 - 802.FFFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |    2GB | 803.0000.0000 - 803.7FFF.FFFF | —                               |
+ * | Reserved          |    2GB | 803.0000.0000 - 803.7FFF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip1 CSRs       |  256MB | 803.8000.0000 - 803.8FFF.FFFF | addr<5:0> = 0, quadword access. |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          | 1536MB | 803.9000.0000 - 803.EFFF.FFFF | —                               |
- * | Reserved          |  128MB | 803.F000.0000 - 803.F7FF.FFFF | —                               |
+ * | Reserved          | 1536MB | 803.9000.0000 - 803.EFFF.FFFF | -                               |
+ * | Reserved          |  128MB | 803.F000.0000 - 803.F7FF.FFFF | -                               |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip 1 PCI IACK  |   64MB | 803.F800.0000 - 803.FBFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
@@ -991,8 +992,8 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
  * +-------------------+--------+-------------------------------+---------------------------------+
  * | Pchip1 PCI conf   |   16MB | 803.FE00.0000 - 803.FEFF.FFFF | Linear addressing.              |
  * +-------------------+--------+-------------------------------+---------------------------------+
- * | Reserved          |   16MB | 803.FF00.0000 - 803.FFFF.FFFF | —                               |
- * | Reserved          | 8172GB | 804.0000.0000 - FFF.FFFF.FFFF | Bits <42:35> are don’t cares if |
+ * | Reserved          |   16MB | 803.FF00.0000 - 803.FFFF.FFFF | -                               |
+ * | Reserved          | 8172GB | 804.0000.0000 - FFF.FFFF.FFFF | Bits <42:35> are don't cares if |
  * |                   |        |                               | bit <43> is asserted.           |
  * +-------------------+--------+-------------------------------+---------------------------------+
  * \endcode
@@ -1073,9 +1074,9 @@ u64 CSystem::ReadMem(u64 address, int dsize, CSystemComponent* source)
 
       // Unused PCI I/O space
       //if (source)
-      //  printf("Read from unknown IO port %"LL"x on PCI 0 from %s   \n",a & U64(0x1ffffff),source->devid_string);
+      //  printf("Read from unknown IO port %" PRIx64 " on PCI 0 from %s   \n",a & U64(0x1ffffff),source->devid_string);
       //else
-      //  printf("Read from unknown IO port %"LL"x on PCI 0   \n",a & U64(0x1ffffff));
+      //  printf("Read from unknown IO port %" PRIx64 " on PCI 0   \n",a & U64(0x1ffffff));
       return 0;
     }
 
@@ -1085,11 +1086,11 @@ u64 CSystem::ReadMem(u64 address, int dsize, CSystemComponent* source)
       // Unused PCI I/O space
       if(source)
       {
-        printf("Read from unknown IO port %"LL "x on PCI 1 from %s   \n",
+        printf("Read from unknown IO port %" PRIx64 " on PCI 1 from %s   \n",
                a & U64(0x1ffffff), source->devid_string);
       }
       else
-        printf("Read from unknown IO port %"LL "x on PCI 1   \n",
+        printf("Read from unknown IO port %" PRIx64 " on PCI 1   \n",
                a & U64(0x1ffffff));
       return 0;
     }
@@ -1103,11 +1104,11 @@ u64 CSystem::ReadMem(u64 address, int dsize, CSystemComponent* source)
       { // skip legacy video
         if(source)
         {
-          printf("Read from unknown memory %"LL "x on PCI 0 from %s   \n",
+          printf("Read from unknown memory %" PRIx64 " on PCI 0 from %s   \n",
                  a & U64(0xffffffff), source->devid_string);
         }
         else
-          printf("Read from unknown memory %"LL "x on PCI 0   \n",
+          printf("Read from unknown memory %" PRIx64 " on PCI 0   \n",
                  a & U64(0xffffffff));
       }
 
@@ -1120,21 +1121,21 @@ u64 CSystem::ReadMem(u64 address, int dsize, CSystemComponent* source)
       // Unused PCI memory space
       if(source)
       {
-        printf("Read from unknown memory %"LL "x on PCI 1 from %s   \n",
+        printf("Read from unknown memory %" PRIx64 " on PCI 1 from %s   \n",
                a & U64(0xffffffff), source->devid_string);
       }
       else
-        printf("Read from unknown memory %"LL "x on PCI 1   \n",
+        printf("Read from unknown memory %" PRIx64 " on PCI 1   \n",
                a & U64(0xffffffff));
       return 0;
     }
 
 #if defined(DEBUG_UNKMEM)
     if(source)
-      printf("Read from unknown memory %"LL "x from %s   \n", a,
+      printf("Read from unknown memory %" PRIx64 " from %s   \n", a,
              source->devid_string);
     else
-      printf("Read from unknown memory %"LL "x   \n", a);
+      printf("Read from unknown memory %" PRIx64 "   \n", a);
 #endif //defined(DEBUG_UNKMEM)
     return 0x00;
 
@@ -1399,7 +1400,7 @@ u64 CSystem::ReadMem(u64 address, int dsize, CSystemComponent* source)
  * Pchip cannot correctly capture the SYN, CMD, or ADDR field.
  * 
  * Furthermore, if software reads PERROR in a polling loop, or reads PERROR before the
- * Pchip’s error signal is reflected in the Cchip’s DRIR CSR, the INV bit may also be set.
+ * Pchip's error signal is reflected in the Cchip's DRIR CSR, the INV bit may also be set.
  * 
  * To avoid the latter condition, read PERROR only after receiving an IRQ0 interrupt,
  * then read the Cchip DIR CSR to determine that this Pchip has detected an error.
@@ -1578,7 +1579,7 @@ void CSystem::pchip_csr_write(int num, u32 a, u64 data)
     return;
 
   case 0x0c0:
-    state.pchip[num].wsba[3] = data & U64(0x00000080fff00001) | 2;
+    state.pchip[num].wsba[3] = (data & U64(0x00000080fff00001)) | 2;
     return;
 
   case 0x100:
@@ -1621,7 +1622,7 @@ void CSystem::pchip_csr_write(int num, u32 a, u64 data)
     return;
 
   default:
-    printf("Unknown PCHIP %d CSR %07x write with %016"LL "x attempted.\n", num,
+    printf("Unknown PCHIP %d CSR %07x write with %016" PRIx64 " attempted.\n", num,
            a, data);
   }
 }
@@ -1636,7 +1637,7 @@ u64 CSystem::cchip_csr_read(u32 a, CSystemComponent* source)
 
   case 0x080:
 
-    //    printf("MISC: %016" LL "x from CPU %d (@%" LL "x) (other @ %" LL "x).\n",state.cchip.misc | cpu->get_cpuid(),cpu->get_cpuid(), cpu->get_pc()-4, acCPUs[1-cpu->get_cpuid()]->get_pc());
+    //    printf("MISC: %016" PRIx64 " from CPU %d (@%" PRIx64 ") (other @ %" PRIx64 ").\n",state.cchip.misc | cpu->get_cpuid(),cpu->get_cpuid(), cpu->get_pc()-4, acCPUs[1-cpu->get_cpuid()]->get_pc());
     return state.cchip.misc | ((CAlphaCPU*) source)->get_cpuid();
 
   case 0x100:
@@ -1688,21 +1689,21 @@ void CSystem::cchip_csr_write(u32 a, u64 data, CSystemComponent* source)
     if(data & U64(0x0000000001000000))
     {
       state.cchip.misc &= ~U64(0x0000000000ff0000);           //Arbitration Clear
-      printf("Arbitration clear from CPU %d (@%"LL "x).\n", cpu->get_cpuid(),
+      printf("Arbitration clear from CPU %d (@%" PRIx64 ").\n", cpu->get_cpuid(),
              cpu->get_pc() - 4);
     }
 
     if(data & U64(0x00000000000f0000))
     {
-      printf("Arbitration %016"LL "x from CPU %d (@%"LL "x)... ", data,
+      printf("Arbitration %016" PRIx64 " from CPU %d (@%" PRIx64 ")... ", data,
              cpu->get_cpuid(), cpu->get_pc() - 4);
       if(!(state.cchip.misc & U64(0x00000000000f0000)))
       {
         state.cchip.misc |= (data & U64(0x00000000000f0000)); //Arbitration won
-        printf("won  %016"LL "x\n", state.cchip.misc);
+        printf("won  %016" PRIx64 "\n", state.cchip.misc);
       }
       else
-        printf("lost %016"LL "x\n", state.cchip.misc);
+        printf("lost %016" PRIx64 "\n", state.cchip.misc);
     }
 
     // stop interval timer interrupt
@@ -1727,7 +1728,7 @@ void CSystem::cchip_csr_write(u32 a, u64 data, CSystemComponent* source)
         if(data & (U64(0x100) << i))
         {
           acCPUs[i]->irq_h(3, false, 0);
-          printf("*** IP interrupt cleared for CPU %d from CPU %d(@ %"LL "x).\n",
+          printf("*** IP interrupt cleared for CPU %d from CPU %d(@ %" PRIx64 ").\n",
                  i, cpu->get_cpuid(), cpu->get_pc() - 4);
         }
       }
@@ -1742,7 +1743,7 @@ void CSystem::cchip_csr_write(u32 a, u64 data, CSystemComponent* source)
         {
           state.cchip.misc |= U64(0x100) << i;
           acCPUs[i]->irq_h(3, true, 0);
-          printf("*** IP interrupt set for CPU %d from CPU %d(@ %"LL "x)\n", i,
+          printf("*** IP interrupt set for CPU %d from CPU %d(@ %" PRIx64 ")\n", i,
                  cpu->get_cpuid(), cpu->get_pc() - 4);
 
           //          CThread::sleep(10);
@@ -1760,7 +1761,7 @@ void CSystem::cchip_csr_write(u32 a, u64 data, CSystemComponent* source)
     return;
 
   default:
-    printf("Unknown CCHIP CSR %07x write with %016"LL "x attempted.\n", a, data);
+    printf("Unknown CCHIP CSR %07x write with %016" PRIx64 " attempted.\n", a, data);
   }
 }
 
@@ -1898,14 +1899,16 @@ int CSystem::LoadROM()
     {
       if(feof(f))
         break;
-      fread(&scratch, 1, 1, f);
+      if (fread(&scratch, 1, 1, f) != 1)
+        FAILURE(Runtime, "Error reading ROM image");
     }
 
     if(feof(f))
       FAILURE(Runtime, "File is too short to be a SRM ROM image");
     buffer = PtrToMem(0x900000);
     while(!feof(f))
-      fread(buffer++, 1, 1, f);
+      if (fread(buffer++, 1, 1, f) != 1)
+        FAILURE(Runtime, "Error reading ROM image");
     fclose(f);
 
     printf("%%SYS-I-DECOMP: Decompressing ROM image.\n0%%");
@@ -1958,14 +1961,17 @@ int CSystem::LoadROM()
   {
     printf("%%SYS-I-READROM: Reading decompressed ROM image from %s.\n",
            myCfg->get_text_value("rom.decompressed", "decompressed.rom"));
-    fread(&temp, 1, sizeof(u64), f);
+    if (fread(&temp, 1, sizeof(u64), f) != sizeof(u64))
+      FAILURE(Runtime, "Error reading decompressed ROM image");
     for(int i = 0; i < iNumCPUs; i++)
       acCPUs[i]->set_pc(endian_64(temp));
-    fread(&temp, 1, sizeof(u64), f);
+    if (fread(&temp, 1, sizeof(u64), f) != sizeof(u64))
+      FAILURE(Runtime, "Error reading decompressed ROM image");
     for(int i = 0; i < iNumCPUs; i++)
       acCPUs[i]->set_PAL_BASE(endian_64(temp));
     buffer = PtrToMem(0);
-    fread(buffer, 1, 0x200000, f);
+    if (fread(buffer, 1, 0x200000, f) != 0x200000)
+      FAILURE(Runtime, "Error reading decompressed ROM image");
     fclose(f);
   }
 
@@ -2026,9 +2032,9 @@ int CSystem::LoadROM()
  * to either or both CPUs.
  *
  * After handling all known outstanding interrupts, software may suppress b_irq<1>
- * device interrupts to allow the Cchip’s polling mechanism to detect the updated (deasserted)
+ * device interrupts to allow the Cchip's polling mechanism to detect the updated (deasserted)
  * value of the interrupt lines from the PCI devices and thereby avoid giving the
- * CPU “stale” interrupts, which require passive release. The field MISC<DEVSUP> is
+ * CPU "stale" interrupts, which require passive release. The field MISC<DEVSUP> is
  * provided for this purpose. When a CPU writes a one to its bit in MISC<DEVSY> the
  * Cchip deasserts b_irq<1> to that CPU (regardless of the value in the DIRn) until it has
  * completed an entire polling loop. When the Cchip has completed an entire polling loop,
@@ -2211,7 +2217,7 @@ u64 CSystem::PCI_Phys(int pcibus, u32 address)
   //Step through windows
   for(j = 0; j < 4; j++)
   {
-    printf("WSBA%d: %016"LL "x WSM: %016"LL "x TBA: %016"LL "x\n", j,
+    printf("WSBA%d: %016" PRIx64 " WSM: %016" PRIx64 " TBA: %016" PRIx64 "\n", j,
            state.pchip[pcibus].wsba[j], state.pchip[pcibus].wsm[j],
            state.pchip[pcibus].tba[j]);
   }
@@ -2253,7 +2259,7 @@ u64 CSystem::PCI_Phys(int pcibus, u32 address)
           a = PCI_Phys_direct_mapped(address, state.pchip[pcibus].wsm[j],
                                      state.pchip[pcibus].tba[j]);
 #if defined(DEBUG_PCI)
-        printf("PCI memory address %08x translated to %016"LL "x\n", address, a);
+        printf("PCI memory address %08x translated to %016" PRIx64 "\n", address, a);
 #endif
         return a;
       }
@@ -2505,6 +2511,7 @@ void CSystem::RestoreState(const char* fn)
   int*          mem = (int*) memory;
   unsigned int  memints = (1 << iNumMemoryBits) / (unsigned int) sizeof(int);
   u32           temp_32;
+  size_t        r;
 
   f = fopen(fn, "rb");
   if(!f)
@@ -2513,14 +2520,25 @@ void CSystem::RestoreState(const char* fn)
     return;
   }
 
-  fread(&temp_32, sizeof(u32), 1, f);
+  r = fread(&temp_32, sizeof(u32), 1, f);
+  if(r != 1)
+  {
+    printf("%%SYS-F-EOF: unexpected end of file!\n");
+    return;
+  }
+
   if(temp_32 != 0xa1fae540) // MAGIC NUMBER (ALFAES40 ==> A1FAE540 )
   {
     printf("%%SYS-F-FORMAT: %s does not appear to be a state file.\n", fn);
     return;
   }
 
-  fread(&temp_32, sizeof(u32), 1, f);
+  r = fread(&temp_32, sizeof(u32), 1, f);
+  if(r != 1)
+  {
+    printf("%%SYS-F-EOF: unexpected end of file!\n");
+    return;
+  }
 
   if(temp_32 != 0x00020001) // File Format Version 2.1
   {
@@ -2531,10 +2549,20 @@ void CSystem::RestoreState(const char* fn)
   // memory
   for(m = 0; m < memints; m++)
   {
-    fread(&(mem[m]), 1, sizeof(int), f);
+    r = fread(&(mem[m]), 1, sizeof(int), f);
+    if(r != sizeof(int))
+    {
+      printf("%%SYS-F-EOF: unexpected end of file!\n");
+      return;
+    }
     if(!mem[m])
     {
-      fread(&j, 1, sizeof(int), f);
+      r = fread(&j, 1, sizeof(int), f);
+      if(r != sizeof(int))
+      {
+        printf("%%SYS-F-EOF: unexpected end of file!\n");
+        return;
+      }
       while(j--)
       {
         mem[++m] = 0;
@@ -2542,7 +2570,12 @@ void CSystem::RestoreState(const char* fn)
     }
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
+  if(r != 1)
+  {
+    printf("%%SYS-F-EOF: unexpected end of file!\n");
+    return;
+  }
 
   // components
   //
@@ -2597,10 +2630,10 @@ void CSystem::panic(char* message, int flags)
     printf("\n==================== STATE OF CPU %d ====================\n",
            cpunum);
 
-    printf("PC: %016"LL "x\n", cpu->get_pc());
+    printf("PC: %016" PRIx64 "\n", cpu->get_pc());
 #ifdef IDB
-    printf("Physical PC: %016"LL "x\n", cpu->get_current_pc_physical());
-    printf("Instruction Count: %"LL "d\n", cpu->get_instruction_count());
+    printf("Physical PC: %016" PRIx64 "\n", cpu->get_current_pc_physical());
+    printf("Instruction Count: %" PRId64 "\n", cpu->get_instruction_count());
 #endif
     printf("\n");
 
@@ -2608,7 +2641,7 @@ void CSystem::panic(char* message, int flags)
     {
       if(i < 10)
         printf("R");
-      printf("%d:%016"LL "x", i, cpu->get_r(i, false));
+      printf("%d:%016" PRIx64 "", i, cpu->get_r(i, false));
       if(i % 4 == 3)
         printf("\n");
       else
@@ -2620,7 +2653,7 @@ void CSystem::panic(char* message, int flags)
     {
       if(i < 10)
         printf("S");
-      printf("%d:%016"LL "x", i, cpu->get_r(i + 32, false));
+      printf("%d:%016" PRIx64 "", i, cpu->get_r(i + 32, false));
       if(i % 4 == 3)
         printf("\n");
       else
@@ -2631,7 +2664,7 @@ void CSystem::panic(char* message, int flags)
     {
       if(i < 10)
         printf("S");
-      printf("%d:%016"LL "x", i, cpu->get_r(i + 32, false));
+      printf("%d:%016" PRIx64 "", i, cpu->get_r(i + 32, false));
       if(i % 4 == 3)
         printf("\n");
       else
@@ -2643,7 +2676,7 @@ void CSystem::panic(char* message, int flags)
     {
       if(i < 10)
         printf("F");
-      printf("%d:%016"LL "x", i, cpu->get_f(i));
+      printf("%d:%016" PRIx64 "", i, cpu->get_f(i));
       if(i % 4 == 3)
         printf("\n");
       else

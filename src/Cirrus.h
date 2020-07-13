@@ -69,8 +69,8 @@
  * X-1.1        Camiel Vanderhoeven                             10-DEC-2007
  *      Initial version in CVS.
  **/
-#if !defined(INCLUDED_Cirrus_H_)
-#define INCLUDED_Cirrus_H_
+#if !defined(INCLUDED_Cirrus_H)
+#define INCLUDED_Cirrus_H
 
 #include "VGA.h"
 #include "gui/vga.h"
@@ -297,4 +297,4 @@ class CCirrus : public CVGA, public CRunnable
       } CRTC;
     } state;
 };
-#endif // !defined(INCLUDED_Cirrus_H_)
+#endif // !defined(INCLUDED_Cirrus_H)

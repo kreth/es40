@@ -65,11 +65,15 @@
 #ifndef __GUI_H__
 #define __GUI_H__
 
+#if defined(DEBUG_VGA)
 #define BX_DEBUG(a)  \
   {                  \
     printf  a;       \
     printf("   \n"); \
   }
+#else
+#define BX_DEBUG(a)
+#endif
 #define BX_INFO(a)  BX_DEBUG(a)
 #define BX_PANIC(a) BX_DEBUG(a)
 #define BX_ERROR(a) BX_DEBUG(a)

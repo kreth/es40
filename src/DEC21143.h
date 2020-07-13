@@ -89,7 +89,7 @@
  * X-1.1        Camiel Vanderhoeven                             14-NOV-2007
  *      Initial version for ES40 emulator.
  **/
-#if !defined(INCLUDED_DEC21143_H_)
+#if !defined(INCLUDED_DEC21143_H)
 #define INCLUDED_DEC21143_H
 
 #include "PCIDevice.h"

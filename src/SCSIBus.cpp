@@ -189,7 +189,7 @@ int CSCSIBus::SaveState(FILE* f)
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&scsi_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes saved.\n", devid_string, ss);
   return 0;
 }
 
@@ -216,7 +216,7 @@ int CSCSIBus::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -229,7 +229,7 @@ int CSCSIBus::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -249,6 +249,6 @@ int CSCSIBus::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes restored.\n", devid_string, ss);
   return 0;
 }

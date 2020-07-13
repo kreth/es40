@@ -90,8 +90,8 @@
  * X-1.1        Camiel Vanderhoeven                             14-DEC-2007
  *      Initial version in CVS
  **/
-#if !defined(INCLUDED_SYM53C895_H_)
-#define INCLUDED_SYM53C895_H_
+#if !defined(INCLUDED_SYM53C895_H)
+#define INCLUDED_SYM53C895_H
 
 #include "PCIDevice.h"
 #include "DiskController.h"

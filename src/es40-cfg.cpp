@@ -194,7 +194,6 @@ void add_disks(ShrinkingChoiceQuestion * disk_q, ostream * os)
     cdrom_q.addAnswer("disk","false","Hard-disk");
     cdrom_q.addAnswer("cd-rom","true","CD-ROM drive");
     cdrom_q.setDefault("disk");
-    *os << "      cdrom = " << cdrom_q.getAnswer() << ";\n";
 
     /* We also need to know whether this is a
      * writeable or a read-only device.
@@ -224,6 +223,7 @@ void add_disks(ShrinkingChoiceQuestion * disk_q, ostream * os)
        */
       ro_q.ask();
     }
+    *os << "      cdrom = " << cdrom_q.getAnswer() << ";\n";
     *os << "      read_only = " << ro_q.getAnswer() << ";\n";
 
     /* The user can define a custom model
@@ -740,7 +740,8 @@ int main(int argc, char* argv[])
         int i = 1;
         for(d = alldevs; d; d = d->next)
         {
-          if_q.addAnswer(i2s(i),d->name, string(d->name) + "(" + string(d->description) + ")");
+          if_q.addAnswer(i2s(i),d->name,
+			 string(d->name) + "(" + string(d->description ? d->description : "") + ")");
           i++;
         }
       }

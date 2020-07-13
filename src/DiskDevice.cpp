@@ -141,7 +141,7 @@ CDiskDevice::CDiskDevice(CConfigurator*  cfg, CSystem*  sys, CDiskController*  c
 
   model_number = myCfg->get_text_value("model_number", filename);
 
-  printf("%s: Mounted device %s, %"LL "d %d-byte blocks, %"LL "d/%d/%d.\n",
+  printf("%s: Mounted device %s, %" PRId64 " %zu-byte blocks, %" PRId64 "/%ld/%ld.\n",
          devid_string, filename, byte_size / state.block_size, state.block_size,
          cylinders, heads, sectors);
 }
@@ -177,7 +177,7 @@ bool CDiskDevice::seek_byte(off_t_large byte)
 size_t CDiskDevice::read_bytes(void* dest, size_t bytes)
 {
 
-  //  printf("%s: read %d bytes @ %" LL "d.\n",devid_string,bytes,state.byte_pos);
+  //  printf("%s: read %zu bytes @ %" PRId64 ".\n",devid_string,bytes,state.byte_pos);
 #if defined(_WIN32)
   off_t_large   byte_from = (state.byte_pos / dev_block_size) * dev_block_size;
   off_t_large   byte_to =
@@ -196,7 +196,7 @@ size_t CDiskDevice::read_bytes(void* dest, size_t bytes)
     buffer_size = byte_len;
     CHECK_REALLOCATION(buffer, realloc(buffer, buffer_size), char);
 
-    //    printf("%s: buffer enlarged to %d bytes.\n",devid_string,buffer_size);
+    //    printf("%s: buffer enlarged to %zu bytes.\n",devid_string,buffer_size);
   }
 
   a.QuadPart = byte_from;
@@ -206,8 +206,8 @@ size_t CDiskDevice::read_bytes(void* dest, size_t bytes)
 
   if(r != (byte_len))
   {
-    printf("%s: Tried to read %d bytes from pos %"LL
-             "d, but could only read %d bytes!\n", devid_string, byte_len,
+    printf("%s: Tried to read %d bytes from pos %" PRId64
+             ", but could only read %d bytes!\n", devid_string, byte_len,
            byte_from, r);
     printf("%s: Error %ld.\n", devid_string, GetLastError());
   }
@@ -257,8 +257,8 @@ size_t CDiskDevice::write_bytes(void* src, size_t bytes)
     ReadFile(handle, buffer, (DWORD) dev_block_size, &r, NULL);
     if(r != (dev_block_size))
     {
-      printf("%s: Tried to read %d bytes from pos %"LL
-               "d, but could only read %d bytes!\n", devid_string,
+      printf("%s: Tried to read %zu bytes from pos %" PRId64
+               ", but could only read %d bytes!\n", devid_string,
              dev_block_size, byte_from, r);
       FAILURE(InvalidArgument,
               "Error during device write operation. Terminating to avoid disk corruption.");
@@ -276,8 +276,8 @@ size_t CDiskDevice::write_bytes(void* src, size_t bytes)
              &r, NULL);
     if(r != (dev_block_size))
     {
-      printf("%s: Tried to read %d bytes from pos %"LL
-               "d, but could only read %d bytes!\n", devid_string,
+      printf("%s: Tried to read %zu bytes from pos %" PRId64
+               ", but could only read %d bytes!\n", devid_string,
              dev_block_size, byte_to - dev_block_size, r);
       FAILURE(InvalidArgument,
               "Error during device write operation. Terminating to avoid disk corruption.");
@@ -295,8 +295,8 @@ size_t CDiskDevice::write_bytes(void* src, size_t bytes)
 
   if(r != byte_len)
   {
-    printf("%s: Tried to write %d bytes to pos %"LL
-             "d, but could only write %d bytes!\n", devid_string, byte_len,
+    printf("%s: Tried to write %d bytes to pos %" PRId64
+             ", but could only write %d bytes!\n", devid_string, byte_len,
            byte_from, r);
     FAILURE(InvalidArgument,
             "Error during device write operation. Terminating to avoid disk corruption.");

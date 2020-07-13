@@ -63,7 +63,8 @@ CPacketQueue::CPacketQueue(const char* name, int max)
 CPacketQueue::~CPacketQueue()
 {
   delete[] packets;
-  printf("CPacketQueue(%s): highwater=%d, lost=%d\n", name, highwater, dropped);
+  if(dropped != 0)
+    printf("CPacketQueue(%s): highwater=%d, lost=%d\n", name, highwater, dropped);
 }
 
 void CPacketQueue::flush()

@@ -1873,7 +1873,7 @@ int CKeyboard::SaveState(FILE* f)
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&kb_magic2, sizeof(u32), 1, f);
-  printf("kbc: %d bytes saved.\n", (int) ss);
+  printf("kbc: %ld bytes saved.\n", ss);
   return 0;
 }
 
@@ -1900,7 +1900,7 @@ int CKeyboard::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("kbc: unexpected end of file!\n");
@@ -1913,7 +1913,7 @@ int CKeyboard::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("kbc: unexpected end of file!\n");
@@ -1933,7 +1933,7 @@ int CKeyboard::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("kbc: %d bytes restored.\n", (int) ss);
+  printf("kbc: %ld bytes restored.\n", ss);
   return 0;
 }
 

@@ -133,8 +133,8 @@
  *      Initial version in CVS; this part was split off from the CAliM1543C
  *      class.
  **/
-#if !defined(INCLUDED_ALIM1543C_IDE_H_)
-#define INCLUDED_ALIM1543C_IDE_H_
+#if !defined(INCLUDED_ALIM1543C_IDE_H)
+#define INCLUDED_ALIM1543C_IDE_H
 
 // If DEBUG_IDE is defined, define all IDE debugging flags.
 #ifdef DEBUG_IDE

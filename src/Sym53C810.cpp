@@ -605,7 +605,7 @@ void CSym53C810::stop_threads()
 CSym53C810::~CSym53C810()
 {
   stop_threads();
-  delete scsi_bus[0];
+  // delete scsi_bus[0]; FIXME_TKL
 }
 
 /**
@@ -654,14 +654,14 @@ int CSym53C810::SaveState(FILE* f)
   long  ss = sizeof(state);
   int   res;
 
-  if(res = CPCIDevice::SaveState(f))
+  if((res = CPCIDevice::SaveState(f)) != 0)
     return res;
 
   fwrite(&sym_magic1, sizeof(u32), 1, f);
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&sym_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes saved.\n", devid_string, ss);
   return 0;
 }
 
@@ -676,7 +676,7 @@ int CSym53C810::RestoreState(FILE* f)
   int     res;
   size_t  r;
 
-  if(res = CPCIDevice::RestoreState(f))
+  if((res = CPCIDevice::RestoreState(f)) != 0)
     return res;
 
   r = fread(&m1, sizeof(u32), 1, f);
@@ -692,7 +692,7 @@ int CSym53C810::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -705,7 +705,7 @@ int CSym53C810::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -725,7 +725,7 @@ int CSym53C810::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes restored.\n", devid_string, ss);
   return 0;
 }
 
@@ -1048,7 +1048,7 @@ u32 CSym53C810::ReadMem_Bar(int func, int bar, u32 address, int dsize)
 
       default:
         FAILURE_2(NotImplemented,
-                  "SYM: Attempt to read from unknown register at %02x\n", dsize,
+                  "SYM: Attempt to read %d from unknown register at %02x\n", dsize,
                   address);
       }
 

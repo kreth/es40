@@ -309,7 +309,7 @@ void CDEC21143::init()
       while(inum < 1 || inum > i)
       {
         printf("%%NIC-Q-NICNO: Enter the interface number (1-%d):", i);
-        scanf("%d", &inum);
+        int r = scanf("%d", &inum);
       }
     }
 
@@ -1406,7 +1406,7 @@ int CDEC21143::dec21143_tx()
 
         // printf("pcap send: %d bytes   \n", state.tx.cur_buf_len);
         if(pcap_sendpacket(fp, state.tx.cur_buf, state.tx.cur_buf_len))
-          printf("Error sending the packet: %s\n", pcap_geterr);
+          printf("Error sending the packet: %s\n", pcap_geterr(fp));
       }
 
       // if in internal or external loopback mode, add packet to read queue
@@ -1556,7 +1556,7 @@ void CDEC21143::SetupFilter()
 #if defined(DEBUG_NIC_FILTER)
   printf("FILTER = %s.   \n", filter);
 #endif
-  if(pcap_compile(fp, &fcode, filter, 1, 0xffffffff) < 0)
+  if(pcap_compile(fp, &fcode, filter, 1, PCAP_NETMASK_UNKNOWN) < 0)
     FAILURE_1(Logic, "Unable to compile the packet filter (%s)", filter);
 
   if(pcap_setfilter(fp, &fcode) < 0)
@@ -1713,14 +1713,14 @@ int CDEC21143::SaveState(FILE* f)
   long  ss = sizeof(state);
   int   res;
 
-  if(res = CPCIDevice::SaveState(f))
+  if((res = CPCIDevice::SaveState(f)) != 0)
     return res;
 
   fwrite(&nic_magic1, sizeof(u32), 1, f);
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&nic_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", devid_string, ss);
+  printf("%s: %ld bytes saved.\n", devid_string, ss);
   return 0;
 }
 
@@ -1735,7 +1735,7 @@ int CDEC21143::RestoreState(FILE* f)
   int     res;
   size_t  r;
 
-  if(res = CPCIDevice::RestoreState(f))
+  if((res = CPCIDevice::RestoreState(f)) != 0)
     return res;
 
   r = fread(&m1, sizeof(u32), 1, f);
@@ -1751,7 +1751,7 @@ int CDEC21143::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -1764,7 +1764,7 @@ int CDEC21143::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -1784,7 +1784,7 @@ int CDEC21143::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", devid_string, ss);
+  printf("%s: %ld bytes restored.\n", devid_string, ss);
   return 0;
 }
 #endif //defined(HAVE_PCAP)

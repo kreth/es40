@@ -557,10 +557,10 @@ void CAlphaCPU::check_state()
   if(ce_new != ce)
   {
 
-    //    printf("                                     time %12" LL "d | prev %12" LL "d  \n",time,prev_time);
-    //    printf("          count lapse %12" LL "d | curr %12" LL "d | prev %12" LL "d  \n",icount_lapse,icount,prev_icount);
-    //    printf("cc %12" LL "d | aim %12" LL "d | diff %12" LL "d | prev %12" LL "d  \n",cc,cc_aim,cc_diff,prev_cc);
-    //    printf("ce %12" LL "d | aim %12" LL "d | diff %12" LL "d | new  %12" LL "d  \n",ce,ce_aim,ce_diff,ce_new);
+    //    printf("                                     time %12" PRId64 " | prev %12" PRId64 "  \n",time,prev_time);
+    //    printf("          count lapse %12" PRId64 " | curr %12" PRId64 " | prev %12" PRId64 "  \n",icount_lapse,icount,prev_icount);
+    //    printf("cc %12" PRId64 " | aim %12" PRId64 " | diff %12" PRId64 " | prev %12" PRId64 "  \n",cc,cc_aim,cc_diff,prev_cc);
+    //    printf("ce %12" PRId64 " | aim %12" PRId64 " | diff %12" PRId64 " | new  %12" PRId64 "  \n",ce,ce_aim,ce_diff,ce_new);
     //    printf("==========================================================================  \n");
     cc_per_instruction = ce_new;
 //    printf("cpu %d speed factor: %d\n",get_cpuid(),ce_new);
@@ -1500,7 +1500,7 @@ void CAlphaCPU::listing(u64 from, u64 to)
  **/
 void CAlphaCPU::listing(u64 from, u64 to, u64 mark)
 {
-  printf("%%CPU-I-LISTNG: Listing from %016"LL "x to %016"LL "x\n", from, to);
+  printf("%%CPU-I-LISTNG: Listing from %016" PRIx64 " to %016" PRIx64 "\n", from, to);
 
   u64   iSavedPC;
   bool  bSavedDebug;
@@ -1539,7 +1539,7 @@ int CAlphaCPU::SaveState(FILE* f)
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&cpu_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes saved.\n", devid_string, ss);
   return 0;
 }
 
@@ -1566,7 +1566,7 @@ int CAlphaCPU::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -1579,7 +1579,7 @@ int CAlphaCPU::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -1599,7 +1599,7 @@ int CAlphaCPU::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes restored.\n", devid_string, ss);
   return 0;
 }
 
@@ -1717,7 +1717,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
 #if defined(IDB)
     if(bTB_Debug)
 #endif
-      printf("TB %"LL "x,%x: ", virt, flags);
+      printf("TB %" PRIx64 ",%x: ", virt, flags);
 #endif
 
   // try superpage first.
@@ -1840,7 +1840,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
 
         // try to handle the double miss. If this needs to transfer control
         // to the OS, it will return non-zero value.
-        if(res = vmspal_ent_dtbm_double_3(flags))
+        if((res = vmspal_ent_dtbm_double_3(flags)) != 0)
           return res;
 
         // Double miss succesfully handled. Try to get the physical address again.
@@ -1851,7 +1851,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
 
         // try to handle the ITB miss. If this needs to transfer control
         // to the OS, it will return non-zero value.
-        if(res = vmspal_ent_itbm(flags))
+        if((res = vmspal_ent_itbm(flags)) != 0)
           return res;
 
         // ITB miss succesfully handled. Try to get the physical address again.
@@ -1873,7 +1873,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
 
         // try to handle the single miss. If this needs to transfer control
         // to the OS, it will return non-zero value.
-        if(res = vmspal_ent_dtbm_single(flags))
+        if((res = vmspal_ent_dtbm_single(flags)) != 0)
           return res;
 
         // Single miss succesfully handled. Try to get the physical address again.
@@ -1914,7 +1914,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
         state.exc_sum = 0;
         if(state.pal_vms)
         {
-          if(res = vmspal_ent_iacv(flags))
+          if((res = vmspal_ent_iacv(flags)) != 0)
             return res;
         }
         else
@@ -1942,7 +1942,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
           2;
         if(state.pal_vms)
         {
-          if(res = vmspal_ent_dfault(flags))
+          if((res = vmspal_ent_dfault(flags)) != 0)
             return res;
         }
         else
@@ -1971,7 +1971,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
         state.exc_sum = 0;
         if(state.pal_vms)
         {
-          if(res = vmspal_ent_iacv(flags))
+          if((res = vmspal_ent_iacv(flags)) != 0)
             return res;
         }
         else
@@ -1999,7 +1999,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
           ((flags & ACCESS_WRITE) ? 8 : 4);
         if(state.pal_vms)
         {
-          if(res = vmspal_ent_dfault(flags))
+          if((res = vmspal_ent_dfault(flags)) != 0)
             return res;
         }
         else
@@ -2022,7 +2022,7 @@ int CAlphaCPU::virt2phys(u64 virt, u64* phys, int flags, bool* asm_bit, u32 ins)
 #if defined(IDB)
     if(bTB_Debug)
 #endif
-      printf("phys: %"LL "x - OK\n", *phys);
+      printf("phys: %" PRIx64 " - OK\n", *phys);
 #endif
   return 0;
 }
@@ -2123,10 +2123,10 @@ void CAlphaCPU::add_tb(u64 virt, u64 pte_phys, u64 pte_flags, int flags)
 #endif
   {
     printf("Add TB---------------------------------------\n");
-    printf("Map VIRT    %016"LL "x\n", state.tb[i].virt);
-    printf("Matching    %016"LL "x\n", state.tb[i].match_mask);
-    printf("And keeping %016"LL "x\n", state.tb[i].keep_mask);
-    printf("To PHYS     %016"LL "x\n", state.tb[i].phys);
+    printf("Map VIRT    %016" PRIx64 "\n", state.tb[i].virt);
+    printf("Matching    %016" PRIx64 "\n", state.tb[i].match_mask);
+    printf("And keeping %016" PRIx64 "\n", state.tb[i].keep_mask);
+    printf("To PHYS     %016" PRIx64 "\n", state.tb[i].phys);
     printf("Read : %c%c%c%c %c\n", state.tb[i].access[0][0] ? 'K' : '-',
            state.tb[i].access[0][1] ? 'E' : '-',
            state.tb[i].access[0][2] ? 'S' : '-',

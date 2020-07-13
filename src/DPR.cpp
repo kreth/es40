@@ -688,7 +688,7 @@ int CDPR::SaveState(FILE* f)
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&dpr_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", "dpr", ss);
+  printf("%s: %ld bytes saved.\n", "dpr", ss);
   return 0;
 }
 
@@ -715,7 +715,7 @@ int CDPR::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", "dpr");
@@ -728,7 +728,7 @@ int CDPR::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", "dpr");
@@ -748,7 +748,7 @@ int CDPR::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", "dpr", ss);
+  printf("%s: %ld bytes restored.\n", "dpr", ss);
   return 0;
 }
 

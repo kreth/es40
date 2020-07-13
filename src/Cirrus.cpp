@@ -532,14 +532,14 @@ int CCirrus::SaveState(FILE* f)
   long  ss = sizeof(state);
   int   res;
 
-  if(res = CPCIDevice::SaveState(f))
+  if((res = CPCIDevice::SaveState(f)) != 0)
     return res;
 
   fwrite(&cirrus_magic1, sizeof(u32), 1, f);
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&cirrus_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes saved.\n", devid_string, ss);
   return 0;
 }
 
@@ -554,7 +554,7 @@ int CCirrus::RestoreState(FILE* f)
   int     res;
   size_t  r;
 
-  if(res = CPCIDevice::RestoreState(f))
+  if((res = CPCIDevice::RestoreState(f)) != 0)
     return res;
 
   r = fread(&m1, sizeof(u32), 1, f);
@@ -570,7 +570,7 @@ int CCirrus::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -583,7 +583,7 @@ int CCirrus::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -603,7 +603,7 @@ int CCirrus::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes restored.\n", devid_string, ss);
   return 0;
 }
 
@@ -616,7 +616,7 @@ u32 CCirrus::mem_read(u32 address, int dsize)
 {
   u32 data = 0;
 
-  //printf("cirrus: mem read: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //printf("cirrus: mem read: %x, %d, %x   \n", address, dsize, data);
   return data;
 }
 
@@ -628,7 +628,7 @@ u32 CCirrus::mem_read(u32 address, int dsize)
 void CCirrus::mem_write(u32 address, int dsize, u32 data)
 {
 
-  //printf("cirrus: mem write: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //printf("cirrus: mem write: %x, %d, %x   \n", address, dsize, data);
   switch(dsize)
   {
   case 8:
@@ -659,7 +659,7 @@ u32 CCirrus::legacy_read(u32 address, int dsize)
     data |= (u64) vga_mem_read((u32) address + 0xA0000);
   }
 
-  //  //printf("cirrus: legacy read: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //printf("cirrus: legacy read: %x, %d, %x   \n", address, dsize, data);
   return data;
 }
 
@@ -671,7 +671,7 @@ u32 CCirrus::legacy_read(u32 address, int dsize)
 void CCirrus::legacy_write(u32 address, int dsize, u32 data)
 {
 
-  //  //printf("cirrus: legacy write: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //printf("cirrus: legacy write: %x, %d, %x   \n", address, dsize, data);
   switch(dsize)
   {
   case 32:
@@ -703,12 +703,11 @@ u32 CCirrus::rom_read(u32 address, int dsize)
     case 32:  data = (u32) endian_32((*((u32*) x)) & 0xffffffff); break;
     }
 
-    //printf("cirrus: rom read: %" LL "x, %d, %" LL "x\n", address, dsize,data);
+    //printf("cirrus: rom read: %x, %d, %x\n", address, dsize,data);
   }
   else
   {
-    printf("cirrus: (BAD) rom read: %"LL "x, %d, %"LL "x\n", address, dsize,
-           data);
+    printf("cirrus: (BAD) rom read: %x, %d, %x\n", address, dsize, data);
   }
 
   return data;
@@ -784,7 +783,7 @@ u32 CCirrus::io_read(u32 address, int dsize)
     FAILURE_1(NotImplemented, "Unhandled port %x read", address);
   }
 
-  //printf("cirrus: io read: %" LL "x, %d, %" LL "x   \n", address+VGA_BASE, dsize, data);
+  //printf("cirrus: io read: %x, %d, %x   \n", address, dsize, data);
   return data;
 }
 
@@ -796,7 +795,7 @@ u32 CCirrus::io_read(u32 address, int dsize)
 void CCirrus::io_write(u32 address, int dsize, u32 data)
 {
 
-  //  printf("cirrus: io write: %" LL "x, %d, %" LL "x   \n", address+VGA_BASE, dsize, data);
+  //printf("cirrus: io write: %x, %d, %x   \n", address, dsize, data);
   switch(dsize)
   {
   case 8:

@@ -45,7 +45,7 @@
  *      Initial version in CVS; this part was split off from the CAliM1543C
  *      class.
  **/
-#if !defined(INCLUDED_ALIM1543C_USB_H_)
+#if !defined(INCLUDED_ALIM1543C_USB_H)
 #define INCLUDED_ALIM1543C_USB_H
 
 #include "PCIDevice.h"

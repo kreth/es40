@@ -108,12 +108,13 @@
 #if defined(_WIN32) && !defined(__GNUWIN32__)
 
 #define U64(a)  a##ui64
-#define LL      "I64"
+//#define LL      "I64"
 
 #else // defined(_WIN32)
 
-#define U64(a)  a##ll
-#define LL      "ll"
+#define U64(a)  UINT64_C(a)
+//#define U64(a)  a##ll
+//#define LL      "ll"
 
 #endif // defined(_WIN32)
 

@@ -135,7 +135,7 @@
  *
  * \author Camiel Vanderhoeven (camiel@camicom.com / http://www.camicom.com)
  **/
-#if !defined(INCLUDED_ALIM1543C_H_)
+#if !defined(INCLUDED_ALIM1543C_H)
 #define INCLUDED_ALIM1543C_H
 
 #include "PCIDevice.h"

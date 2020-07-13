@@ -65,8 +65,8 @@
  * X-1.1        Camiel Vanderhoeven                             1-DEC-2007
  *      Initial version in CVS.
  **/
-#if !defined(INCLUDED_S3Trio64_H_)
-#define INCLUDED_S3Trio64_H_
+#if !defined(INCLUDED_S3Trio64_H)
+#define INCLUDED_S3Trio64_H
 
 #include "VGA.h"
 #include "gui/vga.h"
@@ -286,4 +286,4 @@ class CS3Trio64 : public CVGA, public CRunnable
       } CRTC;
     } state;
 };
-#endif // !defined(INCLUDED_S3Trio64_H_)
+#endif // !defined(INCLUDED_S3Trio64_H)

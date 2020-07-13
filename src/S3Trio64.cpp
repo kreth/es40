@@ -523,14 +523,14 @@ int CS3Trio64::SaveState(FILE* f)
   long  ss = sizeof(state);
   int   res;
 
-  if(res = CPCIDevice::SaveState(f))
+  if((res = CPCIDevice::SaveState(f)) != 0)
     return res;
 
   fwrite(&s3_magic1, sizeof(u32), 1, f);
   fwrite(&ss, sizeof(long), 1, f);
   fwrite(&state, sizeof(state), 1, f);
   fwrite(&s3_magic2, sizeof(u32), 1, f);
-  printf("%s: %d bytes saved.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes saved.\n", devid_string, ss);
   return 0;
 }
 
@@ -545,7 +545,7 @@ int CS3Trio64::RestoreState(FILE* f)
   int     res;
   size_t  r;
 
-  if(res = CPCIDevice::RestoreState(f))
+  if((res = CPCIDevice::RestoreState(f)) != 0)
     return res;
 
   r = fread(&m1, sizeof(u32), 1, f);
@@ -561,7 +561,7 @@ int CS3Trio64::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&ss, sizeof(long), 1, f);
+  r = fread(&ss, sizeof(long), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -574,7 +574,7 @@ int CS3Trio64::RestoreState(FILE* f)
     return -1;
   }
 
-  fread(&state, sizeof(state), 1, f);
+  r = fread(&state, sizeof(state), 1, f);
   if(r != 1)
   {
     printf("%s: unexpected end of file!\n", devid_string);
@@ -594,7 +594,7 @@ int CS3Trio64::RestoreState(FILE* f)
     return -1;
   }
 
-  printf("%s: %d bytes restored.\n", devid_string, (int) ss);
+  printf("%s: %ld bytes restored.\n", devid_string, ss);
   return 0;
 }
 
@@ -607,7 +607,7 @@ u32 CS3Trio64::mem_read(u32 address, int dsize)
 {
   u32 data = 0;
 
-  //printf("S3 mem read: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //printf("S3 mem read: %" PRIx64 ", %d, %" PRIx64 "   \n", address, dsize, data);
   return data;
 }
 
@@ -619,7 +619,7 @@ u32 CS3Trio64::mem_read(u32 address, int dsize)
 void CS3Trio64::mem_write(u32 address, int dsize, u32 data)
 {
 
-  //printf("S3 mem write: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //printf("S3 mem write: %" PRIx64 ", %d, %" PRIx64 "   \n", address, dsize, data);
   switch(dsize)
   {
   case 8:
@@ -650,7 +650,7 @@ u32 CS3Trio64::legacy_read(u32 address, int dsize)
     data |= (u64) vga_mem_read((u32) address + 0xA0000);
   }
 
-  //  //printf("S3 legacy read: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //  //printf("S3 legacy read: %" PRIx64 ", %d, %" PRIx64 "   \n", address, dsize, data);
   return data;
 }
 
@@ -662,7 +662,7 @@ u32 CS3Trio64::legacy_read(u32 address, int dsize)
 void CS3Trio64::legacy_write(u32 address, int dsize, u32 data)
 {
 
-  //  //printf("S3 legacy write: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //  //printf("S3 legacy write: %" PRIx64 ", %d, %" PRIx64 "   \n", address, dsize, data);
   switch(dsize)
   {
   case 32:
@@ -694,12 +694,12 @@ u32 CS3Trio64::rom_read(u32 address, int dsize)
     case 32:  data = (u32) endian_32((*((u32*) x)) & 0xffffffff); break;
     }
 
-    //printf("S3 rom read: %" LL "x, %d, %" LL "x\n", address, dsize,data);
+    //printf("S3 rom read: %" PRIx64 ", %d, %" PRIx64 "\n", address, dsize,data);
   }
   else
   {
 
-    //printf("S3 (BAD) rom read: %" LL "x, %d, %" LL "x\n", address, dsize,data);
+    //printf("S3 (BAD) rom read: %" PRIx64 ", %d, %" PRIx64 "\n", address, dsize,data);
   }
 
   return data;
@@ -775,7 +775,7 @@ u32 CS3Trio64::io_read(u32 address, int dsize)
     FAILURE_1(NotImplemented, "Unhandled port %x read", address);
   }
 
-  //printf("S3 io read: %" LL "x, %d, %" LL "x   \n", address, dsize, data);
+  //printf("S3 io read: %" PRIx64 ", %d, %" PRIx64 "   \n", address, dsize, data);
   return data;
 }
 
@@ -787,7 +787,7 @@ u32 CS3Trio64::io_read(u32 address, int dsize)
 void CS3Trio64::io_write(u32 address, int dsize, u32 data)
 {
 
-  //  printf("S3 io write: %" LL "x, %d, %" LL "x   \n", address+VGA_BASE, dsize, data);
+  //  printf("S3 io write: %" PRIx64 ", %d, %" PRIx64 "   \n", address+VGA_BASE, dsize, data);
   switch(dsize)
   {
   case 8:
