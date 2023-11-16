@@ -493,7 +493,7 @@ void CSerial::write_cstr(const char* s)
 
 void CSerial::receive(const char* data, int dsize)
 {
-  while(dsize)
+  while(dsize && *data)
   {
     state.rcvBuffer[state.rcvW++] = *data;
     if(state.rcvW == FIFO_SIZE)
@@ -709,7 +709,7 @@ void CSerial::execute()
         c++;
         b++;
       }
-
+      *c = 0;
       this->receive((const char*) &cbuffer, (c - cbuffer));
     }
 
