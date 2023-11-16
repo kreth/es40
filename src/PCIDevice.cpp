@@ -602,6 +602,7 @@ void CPCIDevice::do_pci_read(u32 address, void*  dest, size_t element_size,
     // get a pointer to system memory if the address is inside main memory
     char*   memptr = cSystem->PtrToMem(phys_addr);
 
+#if 0
     // if the address is inside system memory, a simple memcpy operation is
     // all that is needed.
     if(memptr)
@@ -609,7 +610,35 @@ void CPCIDevice::do_pci_read(u32 address, void*  dest, size_t element_size,
       memcpy(dest, memptr, element_size * element_count);
       return;
     }
-
+#else
+    // if the address is inside system memory we can copy whole mem pages
+    // pay attention to 8K page boundaries
+    if(memptr)
+    {
+       size_t block_to_copy =  element_size * element_count;
+       // calculate size to the next 8K boundary
+       size_t aligned_address = address & 0x1fff;
+       size_t max_chunk_size = 0x2000 - aligned_address;
+       while(memptr && block_to_copy > max_chunk_size) {
+          memcpy(dst, memptr, max_chunk_size);
+          address += max_chunk_size;
+          dst += max_chunk_size;
+          block_to_copy -= max_chunk_size;
+          // set chunk size to maximum of page (8K)
+          max_chunk_size = 0x2000;
+          // calculate new pointer
+          phys_addr = cSystem->PCI_Phys(myPCIBus, address);
+          memptr = cSystem->PtrToMem(phys_addr);
+       }
+       // copy rest of data
+       if(memptr)
+       {
+          memcpy(dst, memptr, block_to_copy);
+       }
+       return;
+    }
+#endif
+    
 #if defined(ES40_BIG_ENDIAN)
   }
 #endif
@@ -692,6 +721,7 @@ void CPCIDevice::do_pci_write(u32 address, void*  source, size_t element_size,
     // get a pointer to system memory if the address is inside main memory
     char*   memptr = cSystem->PtrToMem(phys_addr);
 
+#if 0
     // if the address is inside system memory, a simple memcpy operation is
     // all that is needed.
     if(memptr)
@@ -699,7 +729,35 @@ void CPCIDevice::do_pci_write(u32 address, void*  source, size_t element_size,
       memcpy(memptr, source, element_size * element_count);
       return;
     }
-
+#else
+    // if the address is inside system memory we can copy whole mem pages
+    // pay attention to 8K page boundaries
+    if(memptr)
+    {
+       size_t block_to_copy =  element_size * element_count;
+       // calculate size to the next 8K boundary
+       size_t aligned_address = address & 0x1fff;
+       size_t max_chunk_size = 0x2000 - aligned_address;
+       while(memptr && block_to_copy > max_chunk_size) {
+          memcpy(memptr, src, max_chunk_size);
+          address += max_chunk_size;
+          src += max_chunk_size;
+          block_to_copy -= max_chunk_size;
+          // set chunk size to maximum of page (8K)
+          max_chunk_size = 0x2000;
+          // calculate new pointer
+          phys_addr = cSystem->PCI_Phys(myPCIBus, address);
+          memptr = cSystem->PtrToMem(phys_addr);
+       }
+       // copy rest of data
+       if(memptr)
+       {
+          memcpy(memptr, src, block_to_copy);
+       }
+       return;
+    }
+#endif
+    
 #if defined(ES40_BIG_ENDIAN)
   }
 #endif
