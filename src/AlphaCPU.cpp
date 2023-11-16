@@ -375,8 +375,8 @@ void CAlphaCPU::run()
     {
       if(StopThread)
         return;
-      for(int i = 0; i < 1000000; i++)
-        execute();
+      //for(int i = 0; i < 1000000; i++)
+      execute();
     }
   }
   catch(CException & e)
@@ -781,6 +781,13 @@ inline void CAlphaCPU::handle_interrupt()
 
 inline bool CAlphaCPU::next_ins(u32 &ins, int &opcode)
 {
+  if(state.instruction_count % (int)1e6) {
+     if(StopThread) {
+        // return from inner loop
+        opcode =0x40;
+        return true;
+     }
+  }
   mips_estimate();
 
   state.current_pc = state.pc;
@@ -859,7 +866,7 @@ void CAlphaCPU::execute()
   int opcode;
   int function;
 
-  static void* op_vec[0x40] = {
+  static void* op_vec[0x41] = {
       &&op_00,
       &&unknown,
       &&unknown,
@@ -923,7 +930,8 @@ void CAlphaCPU::execute()
       &&op_3c,
       &&op_3d,
       &&op_3e,
-      &&op_3f
+      &&op_3f,
+      &&exit,
   };
 
 #if defined(IDB)
@@ -1473,6 +1481,7 @@ op_3f:
 unknown:
   UNKNOWN1;
 
+exit:
   return;
 }
 
