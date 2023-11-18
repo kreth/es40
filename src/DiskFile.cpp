@@ -190,9 +190,15 @@ CDiskFile::CDiskFile(CConfigurator*  cfg, CSystem*  sys, CDiskController*  c,
     p++;
   }
 
-  printf("%s: Mounted file %s, %" PRId64 " %zu-byte blocks, %" PRId64 "/%ld/%ld.\n",
-         devid_string, filename, byte_size / state.block_size, state.block_size,
-         cylinders, heads, sectors);
+  if(is_cdrom) {
+    printf("%s: Mounted cdrom iso-file %s, %" PRId64 " %zu-byte blocks, cyl=%" PRId64 "/hds=%ld/sec=%ld.\n",
+           devid_string, filename, byte_size / state.block_size, state.block_size,
+           cylinders, heads, sectors);
+  } else {
+    printf("%s: Mounted file %s, %" PRId64 " %zu-byte blocks, cyl=%" PRId64 "/hds=%ld/sec=%ld.\n",
+           devid_string, filename, byte_size / state.block_size, state.block_size,
+           cylinders, heads, sectors);
+  }
 }
 
 CDiskFile::~CDiskFile(void)
