@@ -592,6 +592,7 @@ void CDisk::scsi_xfer_done_me(int bus)
 #define SCSI_ILL_CMD                - 1 /* illegal command */
 #define SCSI_LBA_RANGE              - 2 /* LBA out of range */
 #define SCSI_TOO_BIG                - 3 /* Too big for buffer */
+#define SCSI_ILL_SENSEPAGE          - 4 /* illegal page sensed */
 
 void CDisk::do_scsi_error(int errcode)
 {
@@ -630,6 +631,16 @@ void CDisk::do_scsi_error(int errcode)
 
   switch(errcode)
   {
+ case SCSI_ILL_SENSEPAGE:
+    state.scsi.sense.data[2] = 0x05;    // illegal request
+    state.scsi.sense.data[12] = 0x24;   // INVALID FIELD IN PARAMETER LIST
+    state.scsi.sense.data[13] = 0x00;
+#if defined(DEBUG_SCSI)
+    printf("%s: Command returns check sense status (sense: ILLEGAL PAGE SENSED).\n",
+           devid_string);
+#endif
+    break;
+
   case SCSI_ILL_CMD:
     state.scsi.sense.data[2] = 0x05;    // illegal request
     state.scsi.sense.data[12] = 0x20;   // invalid command
@@ -878,7 +889,8 @@ int CDisk::do_scsi_command()
         state.scsi.dati.data[7] = 0x60;   // capabilities
 
         //                        vendor  model           rev.
-        memcpy(&(state.scsi.dati.data[8]), "DEC     RZ58     (C) DEC2000", 28);
+        //memcpy(&(state.scsi.dati.data[8]), "DEC     RZ58     (C) DEC2000", 28);
+        memcpy(&(state.scsi.dati.data[8]), "DEC     RZ24     (C) DEC2000", 28);
 
         //  Some data is different for CD-ROM drives:
         if(cdrom())
@@ -1116,9 +1128,15 @@ int CDisk::do_scsi_command()
         break;
 
       default:
+        printf("%s: MODE_SENSE for page %i is not yet implemented!\n", 
+	       devid_string,
+	       pagecode);
+	do_scsi_error(SCSI_ILL_SENSEPAGE);
+	break;
+	/* no fatal error, just return the error mentioned in spec
         FAILURE_2(NotImplemented,
                   "%s: MODE_SENSE for page %i is not yet implemented!\n", devid_string,
-                  pagecode);
+                  pagecode);*/
       }
 
 #if defined(DEBUG_SCSI)
