@@ -236,9 +236,18 @@
 /// Number of entries in each Translation Buffer
 #define TB_ENTRIES        16
 
+#ifdef IDB
+#define NEXT                        \
+  if(state.single_step_mode)        \
+    goto *op_vec[0x40];             \
+  else \
+  while(!next_ins(ins, opcode)) {}; \
+  goto *op_vec[opcode];
+#else
 #define NEXT                        \
   while(!next_ins(ins, opcode)) {}; \
   goto *op_vec[opcode];
+#endif // IDB
 
 /**
  * \brief Emulated CPU.
@@ -289,6 +298,8 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
 
     bool          get_waiting() { return state.wait_for_start; };
     void          stop_waiting() { state.wait_for_start = false; };
+    void          enable_single_step() { state.single_step_mode = true; };
+    void          disable_single_step() { state.single_step_mode = false; };
 #ifdef IDB
     u64           get_current_pc_physical();
     u64           get_instruction_count();
@@ -545,6 +556,7 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
       bool  check_int;          /**< True if an interrupt may be pending */
       int   irq_h_timer[6];     /**< Timers for delayed IRQ_H[0:5] assertion */
       bool  check_timers;
+      bool  single_step_mode;   /** true, if CPU should only do one step in execute function */
     } state;  /**< Determines CPU state that needs to be saved to the state file */
 
 #ifdef IDB

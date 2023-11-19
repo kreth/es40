@@ -1906,15 +1906,15 @@ int CSystem::LoadROM()
     if(feof(f))
       FAILURE(Runtime, "File is too short to be a SRM ROM image");
     buffer = PtrToMem(0x900000);
-    while(!feof(f))
-      if (fread(buffer++, 1, 1, f) != 1)
-        FAILURE(Runtime, "Error reading ROM image");
+    while (!feof(f))
+      (void)!fread(buffer++, 1, 1, f);
     fclose(f);
 
     printf("%%SYS-I-DECOMP: Decompressing ROM image.\n0%%");
     acCPUs[0]->set_pc(0x900001);
     acCPUs[0]->set_PAL_BASE(0x900000);
     acCPUs[0]->enable_icache();
+    acCPUs[0]->enable_single_step();
 
     j = 0;
     while(acCPUs[0]->get_clean_pc() > 0x200000)

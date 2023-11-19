@@ -405,6 +405,7 @@ void CAlphaCPU::init()
   state.iProcNum = cSystem->RegisterCPU(this);
 
   state.wait_for_start = (state.iProcNum == 0) ? false : true;
+  state.single_step_mode = false;
   icache_enabled = true;
   flush_icache();
   icache_enabled = myCfg->get_bool_value("icache", false);
@@ -942,6 +943,14 @@ void CAlphaCPU::execute()
 #endif
 #endif
 
+#ifdef IDB
+  // handle single step mode
+  if(state.single_step_mode) {
+    while(!next_ins(ins, opcode)) {};
+    goto *op_vec[opcode];
+  }
+#endif
+  
   NEXT;
 
   // Decode and dispatch opcode. This is kept very compact using the OP-macro defined in
