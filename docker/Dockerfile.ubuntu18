@@ -1,0 +1,39 @@
+from ubuntu:18.04 as base-ubuntu
+
+run cp /etc/apt/sources.list /etc/apt/sources.list~
+run sed -Ei 's/^# deb-src /deb-src /' /etc/apt/sources.list
+run apt -y update
+run apt install -y --no-install-recommends software-properties-common apt-utils
+run add-apt-repository -y ppa:apt-fast/stable
+run apt -y update
+run env DEBIAN_FRONTEND=noninteractive apt-get -y install apt-fast
+run echo debconf apt-fast/maxdownloads string 16 | debconf-set-selections
+run echo debconf apt-fast/dlflag boolean true | debconf-set-selections
+run echo debconf apt-fast/aptmanager string apt-get | debconf-set-selections
+
+run echo "MIRRORS=( 'http://archive.ubuntu.com/ubuntu, http://de.archive.ubuntu.com/ubuntu, http://ftp.halifax.rwth-aachen.de/ubuntu, http://ftp.uni-kl.de/pub/linux/ubuntu, http://mirror.informatik.uni-mannheim.de/pub/linux/distributions/ubuntu/' )" >> /etc/apt-fast.conf
+
+run apt-fast -y update && apt-fast -y upgrade
+run apt-fast install -y
+
+run apt-fast -y update && apt-fast -y upgrade
+
+# Based on the dependencies, build ES40
+
+from base-ubuntu as es40
+
+run apt-fast install -y wget curl git
+run apt-fast install -y wget autoconf libtool build-essential gcc
+# for tests
+run DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-fast install -yq expect netcat
+
+run pwd
+run git clone https://github.com/kreth/es40.git
+run cd es40
+workdir es40
+run ls -la
+run ./bootstrap.sh
+run mkdir build
+workdir build
+run ../configure
+run make
