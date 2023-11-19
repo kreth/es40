@@ -1975,20 +1975,26 @@ int CSystem::LoadROM()
     fclose(f);
   }
 
-#if !defined(SRM_NO_SPEEDUPS) || !defined(SRM_NO_IDE)
-  printf("%%SYM-I-PATCHROM: Patching ROM for speed.\n");
-#endif
+#if !defined(SRM_NO_SPEEDUPS) /* || !defined(SRM_NO_IDE) FIXME: does not seem to be supported any longer */
+  bool patch_rom_for_speed = myCfg->get_bool_value("rom.speed_patch", true);
+  printf("%%SYM-I-PATCHROM: Patching ROM for speed: %d.\n", patch_rom_for_speed);
+  if (patch_rom_for_speed) {
+    printf("%%SYM-I-PATCHROM: Patching ROM for speed.\n");
+#endif // SRM_NO_SPEEDUPS
 #if !defined(SRM_NO_SPEEDUPS)
-  WriteMem(U64(0x14248), 32, 0xe7e00000, 0);  // e7e00000 = BEQ r31, +0
-  WriteMem(U64(0x14288), 32, 0xe7e00000, 0);
-  WriteMem(U64(0x142c8), 32, 0xe7e00000, 0);
-  WriteMem(U64(0x68320), 32, 0xe7e00000, 0);
-  WriteMem(U64(0x8bb78), 32, 0xe7e00000, 0);  // memory test (aa)
-  WriteMem(U64(0x8bc0c), 32, 0xe7e00000, 0);  // memory test (bb)
-  WriteMem(U64(0x8bc94), 32, 0xe7e00000, 0);  // memory test (00)
-
-  //WriteMem(U64(0xb1158),32,0xe7e00000,0);   // CPU sync?
-#endif
+    WriteMem(U64(0x14248), 32, 0xe7e00000, 0);  // e7e00000 = BEQ r31, +0
+    WriteMem(U64(0x14288), 32, 0xe7e00000, 0);
+    WriteMem(U64(0x142c8), 32, 0xe7e00000, 0);
+    WriteMem(U64(0x68320), 32, 0xe7e00000, 0);
+    WriteMem(U64(0x8bb78), 32, 0xe7e00000, 0);  // memory test (aa)
+    WriteMem(U64(0x8bc0c), 32, 0xe7e00000, 0);  // memory test (bb)
+    WriteMem(U64(0x8bc94), 32, 0xe7e00000, 0);  // memory test (00)
+    
+    //WriteMem(U64(0xb1158),32,0xe7e00000,0);   // CPU sync?
+  } else {
+    printf("%%SYM-I-PATCHROM: ROM Speed Patch DISABLED.\n");
+  }
+#endif // SRM_NO_SPEEDUPS
   printf("%%SYS-I-ROMLOADED: ROM Image loaded successfully!\n");
   return 0;
 }
