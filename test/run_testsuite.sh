@@ -47,6 +47,7 @@ if test ! -f test/tmp/cl67srmrom.exe; then
 fi
 
 run_test rom
+run_test configurator
 run_test bootTru64_V4f
 #run_test bootAlphaBios
 #run_test installTru64

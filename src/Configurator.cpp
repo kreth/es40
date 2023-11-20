@@ -311,15 +311,14 @@ CConfigurator::CConfigurator(class CConfigurator*  parent, char*  name,
 
     *p++ = 0;
 
-    if(state != 0 && state != 1)
-    {
-      printf("%%SYS-E-PARSE: unclosed %s.  Started on line %d.\n",
-             state == STATE_C_COMMENT ? "comment" : "string", state_start);
-    }
-
+    if (state == STATE_C_COMMENT || state == STATE_STRING)
+      FAILURE_2(Configuration,
+                "Unclosed %s.  Started on line %d.\n",
+                state == STATE_C_COMMENT ? "comment" : "string", state_start);
+    
     if(cbrace != 0)
     {
-      printf("%%SYS-E-PARSE: unclosed brace in file.\n");
+      FAILURE(Configuration, "Unclosed brace in file.\n");
     }
 
     textlen = strlen(dst);
@@ -372,7 +371,7 @@ CConfigurator::CConfigurator(class CConfigurator*  parent, char*  name,
     switch(state)
     {
     case STATE_NONE:
-      if(isalnum((unsigned char) text[curtext]) || text[curtext] == '.'
+      if(isalnum(text[curtext]) || text[curtext] == '.'
        || text[curtext] == '_')
       {
         name_start = curtext;
@@ -433,13 +432,21 @@ CConfigurator::CConfigurator(class CConfigurator*  parent, char*  name,
       break;
 
     case STATE_QUOTE:
-      if((text[curtext] == '\"') && (text[curtext + 1] == '\"'))
-      {
-        curtext++;
-      }
-      else if(text[curtext] == '\"')
-      {
-        state = STATE_VALUE;
+      if (text[curtext] == '\"') {
+        if (text[curtext + 1] == '\"')
+          curtext++;
+        else {
+          if (text[curtext + 1] != ';' && text[curtext + 1] != '{') {
+            value_len = curtext - value_start;
+            cur_value = (char *)malloc(value_len + 1);
+            memcpy(cur_value, &text[value_start], value_len);
+            cur_value[value_len] = '\0';
+            FAILURE_1(Configuration,
+                      "Missing semicolon or brace after %s.",
+                      cur_value);
+          }
+          state = STATE_VALUE;
+        }
       }
       break;
 
