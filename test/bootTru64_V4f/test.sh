@@ -14,6 +14,7 @@ rm -vf ../tmp/dka100.vdisk ../tmp/dpr.rom ../tmp/flash.rom
 test -f ../tmp/dka100.vdisk || tar -xj -C ../tmp  -f ../artifacts/dka100.vdisk.tar.bz
 test -f ../tmp/dpr.rom || tar -xj -C ../tmp  -f ../artifacts/dpr.rom.tar.bz
 test -f ../tmp/flash.rom || tar -xj -C ../tmp  -f ../artifacts/flash.rom.tar.bz
+rm -vf simple_test.log
 
 # Redirect to expect script
 ./test_simple.exp
