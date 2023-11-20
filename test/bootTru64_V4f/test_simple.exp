@@ -1,0 +1,70 @@
+#!/usr/bin/expect
+
+log_file -a simple_test.log
+puts "starting es40"
+
+set es40_pid [spawn stdbuf -oL ../../build/src/es40]
+set es40_sid $spawn_id
+
+puts "waiting for es40 comming up..."
+expect "Waiting for connection on port 21264"
+
+sleep 1
+
+set term_pid [spawn nc -tC localhost 21264]
+set term_sid $spawn_id
+
+expect "AlphaServer ES40 Console"
+
+expect "P00>>>"
+send "sh dev\r"
+
+expect "SCSI"
+
+expect "P00>>>"
+
+send "ps\r"
+
+expect "P00>>>"
+
+send "b dka100\r"
+
+expect "Printer service started"
+expect "The system is ready."
+puts "\nHmmm. Yet ready???"
+
+set timeout 60
+expect {
+    "login: " {
+        send "root\r"
+        exp_continue
+    }
+    timeout {
+        puts "haven't seen login prompt $timeout seconds"
+    }
+    "Password:" {
+	send "123456\r"
+    }
+}
+puts "\ncontinuing after login ..."
+
+sleep 1
+
+expect "# "
+send "ps -ef\r"
+expect "# "
+
+#uncomment this to have an interactive session
+#interact
+
+send "halt\r"
+expect "P00>>>"
+
+#interact -u $es40_sid
+puts "stopping ES40 ..."
+close -i $es40_sid
+sleep 1
+exec kill $es40_pid
+#sleep 3
+#exec kill -9 $es40_pid
+#expect eof
