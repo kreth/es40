@@ -24,6 +24,7 @@
  *
  * Parts of this file based upon GXemul, which is Copyright (C) 2004-2007  
  * Anders Gavare.  All rights reserved.
+ * Bugfix from Dietmar M. Zettl
  */
 
 /**
@@ -319,8 +320,6 @@ void CDEC21143::init()
     cfg = d->name;
   }
 
-#if defined(WIN32)
-
   // Opening with pcap_open on Windows allows specification of PCAP_OPENFLAG_NOCAPTURE_LOCAL,
   // which stops the pcap device from seeing it's own transmitted packets.
   //
@@ -332,15 +331,20 @@ void CDEC21143::init()
   //            and will panic on startup and abort.
   //    4. Libpcap doesn't reflect packets, and we want winpcap/libpcap processing to be identical.
   // Loopback packets are handled via direct entry in the receive queue.
+#if defined(WIN32)
   if((fp = pcap_open(cfg, 65536 /*snaplen: capture entire packets */,
-     PCAP_OPENFLAG_PROMISCUOUS | PCAP_OPENFLAG_NOCAPTURE_LOCAL /*promiscuous */,
-   1 /*read timeout: 1ms. */, 0 /* auth structure */, errbuf)) == NULL) // connect to pcap...
+                     PCAP_OPENFLAG_PROMISCUOUS | PCAP_OPENFLAG_NOCAPTURE_LOCAL /*promiscuous */,
+                     10 /*read timeout: 1ms. */, 0 /* auth structure */,
+                     errbuf)) == NULL) // connect to pcap...
 #else
-    if((fp = pcap_open_live(cfg, 65536 /*snaplen: capture entire packets */,
-       1 /*promiscuous */, 1 /*read timeout: 1ms. */, errbuf)) == NULL) // connect to pcap...
+  if((fp = pcap_open_live(cfg, 65536 /*snaplen: capture entire packets */,
+                          1 /*promiscuous */, 10 /*read timeout: 1ms. */, errbuf)) == NULL) // connect to pcap...
 #endif
-      FAILURE_1(Runtime, "Error opening adapter %s", cfg);
+     FAILURE_2(Runtime, "Error opening adapter %s:\n %s", cfg, errbuf);
 
+  if (pcap_setnonblock(fp, 1, errbuf) == PCAP_ERROR)
+     FAILURE_2(Runtime, "Error setting adapter %s non-blocking:\n %s",
+               cfg, errbuf);
   // set default mac = Digital ethernet prefix: 08-00-2B + hexified "ES40" + nic number
   state.mac[0] = 0x08;
   state.mac[1] = 0x00;
@@ -1393,7 +1397,20 @@ int CDEC21143::dec21143_tx()
     do_pci_read(bufaddr, state.tx.cur_buf + state.tx.cur_buf_len, 1, bufsize);
 
     state.tx.cur_buf_len += bufsize;
-
+    
+    /* only partial frames were written to the pcap filter, because the second
+     * buffer was not considered when collecting the ethernet frames in dec21143_tx.
+     * It can happen that both buffers to which tdes2 and tdes3 point contain data.
+     * When this happens the data of both buffers have to be combined to get a valid
+     * ethernet frame and hence IP packet. The patch simply checks if buf2_size is
+     * greater 0 and if that's true append the data from the buffer pointed to by
+     * tdes3 to the current frame.
+     */
+    if ((buf2_size > 0) && (!(tdes1 & TDCTL_CH))) {
+      do_pci_read(tdes3, state.tx.cur_buf + state.tx.cur_buf_len, 1, buf2_size);
+      state.tx.cur_buf_len += buf2_size;
+    }
+    
     /*  Last segment? Then actually transmit it:  */
     if(tdes1 & TDCTL_Tx_LS)
     {
@@ -1605,6 +1622,35 @@ void CDEC21143::ResetNIC()
   state.tx.idling_threshold = 10;
   state.rx.cur_addr = state.tx.cur_addr = 0;
 
+#ifdef COPY_FROM_CARDROM  
+    // ROM DATA
+  u8 romdata[1 << (7)] = {
+     0x11,0x10,0x0b,0x50,0x00,0x00,0x00,0x00
+     ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+     ,0xd4,0x00,0x03,0x01,0x08,0x00,0x2b,0xc4
+     ,0x0c,0x19,0x00,0x41,0x00,0x44,0x45,0x35
+     ,0x30,0x30,0x2d,0x42,0x41,0x22,0x81,0x00
+     ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+     ,0x00,0xac,0xac,0x00,0x00,0x00,0x00,0x00
+     ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+     ,0x00,0x00,0x08,0x04,0x86,0x02,0x00,0xaf
+     ,0x08,0x05,0x00,0x86,0x02,0x04,0xaf,0x08
+     ,0x05,0x00,0x88,0x04,0x03,0xaf,0x08,0x05
+     ,0x00,0x61,0x80,0x88,0x04,0x05,0xaf,0x08
+     ,0x05,0x00,0x61,0x80,0x00,0x00,0x00,0x00
+     ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+     ,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00
+     ,0x00,0x00,0x00,0x00,0x00,0x00,0xe3,0x80 };
+  
+  // copy to sram 
+  
+  for(int i=0; i < 128; ++i) {
+     state.srom.data[i] = romdata[i];
+  }
+
+  /*  Set the MAC address:  */
+  memcpy(state.srom.data + TULIP_ROM_IEEE_NETWORK_ADDRESS, state.mac, 6);
+#else
   /*  Version (= 1) and Chip count (= 1):  */
   state.srom.data[TULIP_ROM_SROM_FORMAT_VERION] = 1;
   state.srom.data[TULIP_ROM_CHIP_COUNT] = 1;
@@ -1627,7 +1673,7 @@ void CDEC21143::ResetNIC()
 
   /*  here comes 4 bytes of GPIO control/data settings  */
   leaf += state.srom.data[leaf];
-
+  
   state.srom.data[leaf] = 15;     /*  descriptor length  */
   state.srom.data[leaf + 1] = TULIP_ROM_MB_21142_MII;
   state.srom.data[leaf + 2] = 0;  /*  PHY nr  */
@@ -1636,6 +1682,7 @@ void CDEC21143::ResetNIC()
 
   /*  5,6, 7,8, 9,10, 11,12, 13,14 = unused by GXemul  */
   leaf += state.srom.data[leaf];
+#endif
 
   /*  MII PHY initial state:  */
   state.mii.state = MII_STATE_RESET;
