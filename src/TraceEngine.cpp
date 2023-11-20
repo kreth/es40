@@ -681,7 +681,7 @@ void CTraceEngine::write_arglist(CAlphaCPU* c, FILE* fl, const char* a)
       else if(!strcmp(f, "%c"))
         sprintf(op, "%02" PRIx64 " (%c)", value, printable((char) value));
       else if(!strcmp(f, "%d"))
-        sprintf(op, "%" PRId64 "", value);
+        sprintf(op, "%" PRIx64 "d", value);
       else if(!strcmp(f, "%x"))
         sprintf(op, "%" PRIx64 "", value);
       else if(!strcmp(f, "%0x"))
@@ -958,7 +958,7 @@ int CTraceEngine::parse(char command[100][100])
       printf("PC: %" PRIx64 "\n", theSystem->get_cpu(0)->get_pc());
       printf("Physical PC: %" PRIx64 "\n",
              theSystem->get_cpu(0)->get_current_pc_physical());
-      printf("Instruction count: %" PRId64 "\n",
+      printf("Instruction count: %" PRIx64 "d\n",
              theSystem->get_cpu(0)->get_instruction_count());
       printf("\n==================== REGISTER VALUES ====================\n");
       for(i = 0; i < 32; i++)
@@ -1500,7 +1500,7 @@ int CTraceEngine::parse(char command[100][100])
       {
         if(!strncasecmp(command[1], "INSTRUCTION", strlen(command[1])))
         {
-          result = sscanf(command[2], "%x", &iBreakPointInstruction);
+          result = sscanf(command[2], "%u", &iBreakPointInstruction);
           if(result != 1)
           {
             printf("%%IDB-F-INVVAL: Invalid hexadecimal value.\n");
