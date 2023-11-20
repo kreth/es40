@@ -1,18 +1,23 @@
-ES40 Alpha System Emulator
+# ES40 Alpha System Emulator
+
+![example workflow](https://github.com/kreth/es40/actions/workflows/build-test-deploy.yml/badge.svg)
 
 Original project at http://www.es40.org (now dead)
 
 Original code at https://sourceforge.net/projects/es40
 
-=== Change log:
+### Change log:
 
 * 12 Jul 2020
 * compiles at least under Linux Ubuntu 18.04
 
-* 20 Nov 2022
+* 20 Nov 2023
 * compiles also under Linux Ubuntu 20.04
+* github workflow test suite added
+* successfull installation of at least Tru64 V4F and V5.2
 
-=== Running the test
+
+## Running the test
 ```
    cd ES40 (Project main dir)
    test/run_testsuite.sh
@@ -22,14 +27,14 @@ or cd into the test dir and run
    test.sh
 ```
 
-== Important Note
+### Important Note
 The rom test must run first. It will generate the decompressed firmware image.
 Currently this is only possible with the es40_idb executable because the Single-Step functionality
 is need and this is turned off in the es40 prg for performance reasons.
 
 So ALWAYS use es40_idl if you need to decompress the firmware.
 
-Original README below
+# Original README below
 
 Welcome to es40.
 
