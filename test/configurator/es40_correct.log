@@ -15,4 +15,4 @@
    **======================================================================**
 
 
-Emulator Failure: Configuration error: Missing semicolon or brace after "../tmp/decompressed.rom.: ../../src/Configurator.cpp, line 444
+Emulator Failure: Configuration error: Missing semicolon or brace after "../tmp/decompressed.rom".: ../../src/Configurator.cpp, line 440
