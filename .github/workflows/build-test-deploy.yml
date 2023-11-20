@@ -1,0 +1,55 @@
+name: Build, test and deploy
+
+on: [push, pull_request]
+
+jobs:
+
+  linux-x86-gcc:
+    runs-on: "ubuntu-20.04"
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: dump
+      run: |
+        echo 'github.workspace === ${{ github.workspace }}'
+        echo "GITHUB_WORKSPACE === $GITHUB_WORKSPACE"
+        echo 'runner.workspace === ${{ runner.workspace }}'
+        echo "RUNNER_WORKSPACE === $RUNNER_WORKSPACE"
+
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%dT%H%M')"
+
+    - name: Install build dependencies
+      run: sudo apt -y update && sudo apt -y install libpcap-dev libsdl-dev netcat-openbsd autoconf libtool build-essential gcc expect
+
+    - name: Prepare after checkout
+      working-directory: ${{github.workspace}}
+      run: ./bootstrap.sh
+
+    - name: Create build environment
+      shell: bash
+      run: mkdir -p ${{github.workspace}}/build
+
+    - name: Configure
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: pwd; ls; ../configure
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      run: make
+
+    - name: Run test scripts
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: ${{github.workspace}}/test/run_testsuite.sh
+
+    - name: Upload ES40 binary
+      uses: actions/upload-artifact@v1
+      with:
+        name: es40-linux-x86-gcc-${{ env.BUILD_DATE }}
+        path: ${{github.workspace}}/build/src/es40
+      env:
+        BUILD_DATE: ${{ steps.date.outputs.date }} 
