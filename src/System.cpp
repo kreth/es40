@@ -591,9 +591,12 @@ int CSystem::SingleStep()
   int result;
 
   for(i = 0; i < iNumCPUs; i++)
-    if (!acCPUs[i]->get_waiting())
-    acCPUs[i]->execute();
-
+     if (!acCPUs[i]->get_waiting()) {
+        bool current_mode = acCPUs[i]->get_single_step_mode();
+        acCPUs[i]->enable_single_step_mode();
+        acCPUs[i]->execute();
+        acCPUs[i]->set_single_step_mode(current_mode);
+     }
   //  iSingleStep++;
 #if defined(LS_MASTER) || defined(LS_SLAVE)
   if(!(iSingleStep % 50))
@@ -1914,7 +1917,7 @@ int CSystem::LoadROM()
     acCPUs[0]->set_pc(0x900001);
     acCPUs[0]->set_PAL_BASE(0x900000);
     acCPUs[0]->enable_icache();
-    acCPUs[0]->enable_single_step();
+    acCPUs[0]->enable_single_step_mode();
 
     j = 0;
     while(acCPUs[0]->get_clean_pc() > 0x200000)

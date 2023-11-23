@@ -14,6 +14,8 @@ sleep 1
 set term_pid [spawn nc -tC localhost 21264]
 set term_sid $spawn_id
 
+set timeout 60
+
 expect "AlphaServer ES40 Console"
 
 expect "P00>>>"
@@ -33,7 +35,6 @@ expect "Printer service started"
 expect "The system is ready."
 puts "\nHmmm. Yet ready???"
 
-set timeout 60
 expect {
     "login: " {
         send "root\r"

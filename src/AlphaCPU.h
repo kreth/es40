@@ -296,10 +296,12 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     void          enable_icache();
     void          restore_icache();
 
-    bool          get_waiting() { return state.wait_for_start; };
-    void          stop_waiting() { state.wait_for_start = false; };
-    void          enable_single_step() { state.single_step_mode = true; };
-    void          disable_single_step() { state.single_step_mode = false; };
+    bool          get_waiting() { return state.wait_for_start; }
+    void          stop_waiting() { state.wait_for_start = false; }
+    void          enable_single_step_mode() { state.single_step_mode = true; }
+    void          disable_single_step_mode() { state.single_step_mode = false; }
+    bool          get_single_step_mode() { return state.single_step_mode; }
+    void          set_single_step_mode(bool mode) { state.single_step_mode = mode; }
 #ifdef IDB
     u64           get_current_pc_physical();
     u64           get_instruction_count();
