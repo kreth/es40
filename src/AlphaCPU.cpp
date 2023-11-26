@@ -1536,13 +1536,15 @@ void CAlphaCPU::listing(u64 from, u64 to, u64 mark)
   bSavedDebug = bDisassemble;
   bDisassemble = true;
   bListing = true;
+  bool bSavedMode = get_single_step_mode();
+  enable_single_step_mode();
   for(state.pc = from; state.pc <= to;)
   {
     execute();
     if(state.pc == mark)
       printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
   }
-
+  set_single_step_mode(bSavedMode);
   bListing = false;
   state.pc = iSavedPC;
   bDisassemble = bSavedDebug;

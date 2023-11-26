@@ -342,6 +342,8 @@ int main (int argc, char*argv[])
 
 #if defined(IDB)
     trc = new CTraceEngine(theSystem);
+    //bDisassemble = true;
+    //bListing = true;
 #endif
     theSystem->LoadROM();
     theDPR->init();
