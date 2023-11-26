@@ -108,9 +108,14 @@
 #include <time.h>
 #include "AlphaCPU.h"
 
+// #define DEBUG_DPR 1
 #define ToBCD(x)  (((x) / 10 << 4) | ((x) % 10))
 
 extern CSerial*   srl[2];
+
+#ifdef DEBUG_DPR
+char trcbuffer[1000];
+#endif
 
 /**
  * Constructor.
@@ -567,10 +572,10 @@ void CDPR::WriteMem(int index, u64 address, int dsize, u64 data)
 #if defined(DEBUG_DPR)
       sprintf(trcbuffer,
               "%%%%DPR-I-OCP: OCP Text set to \"0123456789abcdef\"\r\n");
-      memcpy(trcbuffer + 29, &(state.ram[0x3500]), 16);
+      memcpy(trcbuffer + 30, &(state.ram[0x3500]), 16);
 
       //                    srl[0]->write(trcbuffer);
-      printf(trcbuffer);
+      printf("%%DPR-I-RMC:%s", trcbuffer);
 #endif
       state.ram[0xfc] = 0;
       break;

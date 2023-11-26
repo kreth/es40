@@ -290,7 +290,7 @@ void          handle_debug_string(char* s);
   sprintf(dbg_strptr, bListing ? "%08" PRIx64 ": " : "%016" PRIx64 "", state.current_pc); \
   dbg_strptr += strlen(dbg_strptr);                                                   \
   if(!bListing)                                                                       \
-    sprintf(dbg_strptr, "(%08" PRIx64 "): ", current_pc_physical);                    \
+    sprintf(dbg_strptr, "(%08x): ", ins);        \
   else                                                                                \
   {                                                                                   \
     sprintf(dbg_strptr, "%08x %c%c%c%c: ", ins, printable((char) (ins)),              \
