@@ -321,6 +321,9 @@
 #include <stdlib.h>
 #include <signal.h>
 
+// #define DEBUG_UNKMEM 1
+// #define DEBUG_MEMORY 1
+
 #define CLOCK_RATIO 10000
 
 #if defined(LS_MASTER) || defined(LS_SLAVE)
@@ -766,7 +769,16 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
 
   if(a >> iNumMemoryBits) // non-memory
   {
-
+#ifdef DEBUG_MEMORY     
+     if(source)
+     {
+        printf("Write to device mem %" PRIx64 " from %s   \n",
+               a & U64(0x1ffffff), source->devid_string);
+     }
+     else
+        printf("Write to device mem %" PRIx64 " from somewhere\n",
+               a & U64(0x1ffffff));
+#endif
     // check registered device memory ranges
     for(i = 0; i < iNumMemories; i++)
     {
@@ -843,11 +855,13 @@ void CSystem::WriteMem(u64 address, int dsize, u64 data, CSystemComponent*  sour
     {
 
       // Unused PCI I/O space
-      //      if (source)
-      //        printf("Write to unknown IO port %" PRIx64 " on PCI 0 from %s   \n",a & U64(0x1ffffff),source->devid_string);
-      //      else
-      //        printf("Write to unknown IO port %" PRIx64 " on PCI 0   \n",a & U64(0x1ffffff));
-      return;
+       if (source)
+          printf("Write to unknown IO port %" PRIx64 " on PCI 0 from %s   \n",
+                 a & U64(0x1ffffff),source->devid_string);
+       else
+          printf("Write to unknown IO port %" PRIx64 " on PCI 0   \n",
+                 a & U64(0x1ffffff));
+       return;
     }
 
     if(a >= U64(0x803fc000000) && a < U64(0x803fe000000))
@@ -1010,7 +1024,18 @@ u64 CSystem::ReadMem(u64 address, int dsize, CSystemComponent* source)
   a = address & U64(0x00000807ffffffff);
   if(a >> iNumMemoryBits) // Non Memory
   {
-
+#ifdef DEBUG_MEMORY
+     unsigned int b = address >> 24;
+     if(source)
+     {
+        printf("Read from device mem (%05x) - %" PRIx64 " to %s   \n",
+               b & 0x807ff,
+               a & U64(0x1ffffff), source->devid_string);
+     }
+     else
+        printf("Read device mem %" PRIx64 " to somewhere\n",
+               a & U64(0x1ffffff));
+#endif
     // check registered device memory ranges
     for(i = 0; i < iNumMemories; i++)
     {
@@ -1716,6 +1741,7 @@ void CSystem::cchip_csr_write(u32 a, u64 data, CSystemComponent* source)
       {
         if(data & (U64(0x10) << i))
         {
+          state.cchip.misc &= ~(U64(0x10) << i);
           acCPUs[i]->irq_h(2, false, 0);
 
           //printf("*** TIMER interrupt cleared for CPU %d\n",i);
@@ -1877,6 +1903,8 @@ void CSystem::tig_write(u32 a, u8 data)
   }
 }
 
+
+// #define BOOT_ARC 1
 /**
  * Load ROM contents from file. Try if the decompressed ROM image
  * is available, otherwise create it first.
@@ -1888,7 +1916,7 @@ int CSystem::LoadROM()
   int     i;
   int     j;
   u64     temp;
-  u32     scratch;
+  size_t  scratch;
 
   f = fopen(myCfg->get_text_value("rom.decompressed", "decompressed.rom"), "rb");
   if(!f)
@@ -1898,37 +1926,63 @@ int CSystem::LoadROM()
       FAILURE(Runtime, "No original or decompressed SRM ROM image found");
     printf("%%SYS-I-READROM: Reading original ROM image from %s.\n",
            myCfg->get_text_value("rom.srm", "cl67srmrom.exe"));
-    for(i = 0; i < 0x240; i++)
+    for(i = 0; i < 0xf240; i++)
     {
       if(feof(f))
         break;
-      if (fread(&scratch, 1, 1, f) != 1)
+      if (fread(&scratch, 8, 1, f) != 1)
         FAILURE(Runtime, "Error reading ROM image");
+      //fprintf(stderr, "%0lx\n", scratch);
+      if(scratch == 0x1122334400000000)
+         break;
     }
-
+    //exit (-1);
     if(feof(f))
       FAILURE(Runtime, "File is too short to be a SRM ROM image");
-    buffer = PtrToMem(0x900000);
+#ifdef BOOT_ARC
+    u64 decompress_palbase = 0x300000;
+#else
+    u64 decompress_palbase = 0x900000;
+#endif
+    buffer = PtrToMem(decompress_palbase);
     while (!feof(f))
       (void)!fread(buffer++, 1, 1, f);
     fclose(f);
 
     printf("%%SYS-I-DECOMP: Decompressing ROM image.\n0%%");
-    acCPUs[0]->set_pc(0x900001);
-    acCPUs[0]->set_PAL_BASE(0x900000);
+    acCPUs[0]->set_pc(decompress_palbase + 1);
+    acCPUs[0]->set_PAL_BASE(decompress_palbase);
     acCPUs[0]->enable_icache();
     acCPUs[0]->enable_single_step_mode();
 
     j = 0;
+#ifdef BOOT_ARC
+    while(acCPUs[0]->get_clean_pc() != 0x700000)
+#else
     while(acCPUs[0]->get_clean_pc() > 0x200000)
+#endif
     {
       for(i = 0; i < 1800000; i++)
       {
+#if defined(IDB)
+        //char tmp = getchar();
+        // bDisassemble = true;
+         //bListing = true;
+#endif
         SingleStep();
-        if(acCPUs[0]->get_clean_pc() < 0x200000)
+#ifdef BOOT_ARC
+        if(acCPUs[0]->get_clean_pc() == 0x700000) {
+#else
+        if(acCPUs[0]->get_clean_pc() < 0x200000) {
+#endif
           break;
+        }
       }
-
+#if defined(IDB)      
+      printf("(%d) pc:%lx\n",j, acCPUs[0]->get_clean_pc());
+      //if(j==52)
+      //   bDisassemble=true;
+#endif
       j++;
       if(((j % 5) == 0) && (j < 50))
         printf("%d%%", j * 2);
@@ -1952,12 +2006,21 @@ int CSystem::LoadROM()
       printf("%%SYS-I-ROMWRT: Writing decompressed rom to %s.\n",
              myCfg->get_text_value("rom.decompressed", "decompressed.rom"));
       temp = endian_64(acCPUs[0]->get_pc());
+      //temp = 0x700001;
       fwrite(&temp, 1, sizeof(u64), f);
       temp = endian_64(acCPUs[0]->get_pal_base());
+      //temp = 0x700000;
       fwrite(&temp, 1, sizeof(u64), f);
-      buffer = PtrToMem(0);
+#ifdef BOOT_ARC
+      u64 mem_base = 0x700000;
+#else
+      u64 mem_base = 0L;
+#endif
+      buffer = PtrToMem(mem_base);
       fwrite(buffer, 1, 0x200000, f);
       fclose(f);
+      printf("%%SYS-I-ROMWRT: Written rom from memory base %lx with PALBASE %lx.\n",
+             mem_base, temp);
     }
   }
   else
@@ -1972,7 +2035,11 @@ int CSystem::LoadROM()
       FAILURE(Runtime, "Error reading decompressed ROM image");
     for(int i = 0; i < iNumCPUs; i++)
       acCPUs[i]->set_PAL_BASE(endian_64(temp));
+#ifdef BOOT_ARC
+    buffer = PtrToMem(0x700000);
+#else
     buffer = PtrToMem(0);
+#endif
     if (fread(buffer, 1, 0x200000, f) != 0x200000)
       FAILURE(Runtime, "Error reading decompressed ROM image");
     fclose(f);
