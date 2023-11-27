@@ -114,13 +114,13 @@ const char *datarate_name[] = {
 			 "500 Kb/S MFM", "300 Kb/S MFM", "250 Kb/S MFM", "1 Mb/S MFM"};
 
 struct cmdinfo_t {
-  u8 command;
-  u8 parms;
-  u8 returns;
-  const char * name; } 
-  cmdinfo[] = {
-    { 0, 0, 0, NULL},
-    { 0, 0, 0, NULL},
+      u8 command;
+      u8 parms;
+      u8 returns;
+      const std::string name;
+} cmdinfo[] = {
+    { 0, 0, 0, "?"},
+    { 0, 0, 0, "?"},
     { 2, 9, 7, "Read Track"},
     { 3, 3, 0, "Specify"},
     { 4, 2, 1, "Sense Drive Status"},
@@ -130,7 +130,7 @@ struct cmdinfo_t {
     { 8, 1, 2, "Sense Interrupt Status"},
     { 9, 9, 7, "Write Deleted Data"},
     {10, 2, 7, "Read ID"},
-    {11, 0, 0, NULL},
+    {11, 0, 0, "?"},
     {12, 9, 7, "Read Deleted"},
     {13, 6, 7, "Format Track"},
     {14, 1, 10, "DumpReg"},
@@ -140,22 +140,18 @@ struct cmdinfo_t {
     {18, 2, 0, "Perpendicular Mode"},
     {19, 4, 0, "Configure"},
     {20, 1, 1, "Lock"},
-    {21, 0, 0, NULL},
+    {21, 0, 0, "?"},
     {22, 9, 7, "Verify"},
-    {23, 0, 0, NULL},
-    {24, 0, 0, NULL},
+    {23, 0, 0, "?"},
+    {24, 0, 0, "?"},
     {25, 9, 7, "Scan Low or Equal"},
-    {26, 0, 0, NULL},
-    {27, 0, 0, NULL},
-    {28, 0, 0, NULL},
+    {26, 0, 0, "?"},
+    {27, 0, 0, "?"},
+    {28, 0, 0, "?"},
     {29, 9, 7, "Scan High or Equal"},
-    {30, 0, 0, NULL},
-    {31, 0, 0, NULL},
+    {30, 0, 0, "?"},
+    {31, 0, 0, "?"},
   };
-
-
-
-
 
 void CFloppyController::WriteMem(int index, u64 address, int dsize, u64 data)
 {
@@ -223,17 +219,17 @@ void CFloppyController::WriteMem(int index, u64 address, int dsize, u64 data)
       //printf("FDC: parm_ptr: %d, parms: %d\n", state.cmd_parms_ptr, cmdinfo[cmd].parms);
       if(state.cmd_parms_ptr == cmdinfo[cmd].parms) 
       {
-	    printf("FDC: command %s(",cmdinfo[cmd].name);
-	    for(int i = 1; i < state.cmd_parms_ptr; i++) 
-        {
-	      printf("%x ",state.cmd_parms[i]);
-	    }
-	    printf(")\n");
+         printf("FDC: command %s(",cmdinfo[cmd].name.c_str());
+         for(int i = 1; i < state.cmd_parms_ptr; i++) 
+         {
+            printf("%x ",state.cmd_parms[i]);
+         }
+         printf(")\n");
 
-	    state.cmd_res_max = cmdinfo[cmd].returns;
-	    state.cmd_res_ptr = 0;
-	    state.status.rqm=0;
-	    switch(cmd) {
+         state.cmd_res_max = cmdinfo[cmd].returns;
+         state.cmd_res_ptr = 0;
+         state.status.rqm=0;
+         switch(cmd) {
 	    case 3: // specify
 	      // set up some hardware parameters.  We really don't care about
 	      // the times (step rate time, head unload time, head load time}, but
@@ -334,18 +330,17 @@ void CFloppyController::WriteMem(int index, u64 address, int dsize, u64 data)
 
 
 	    default:
-	      printf("Unhandled floppy command: %d = %s\n", cmd, cmdinfo[cmd].name);
+               printf("Unhandled floppy command: %d = %s\n", cmd, cmdinfo[cmd].name.c_str());
 	      exit(1);
-	    }
-    	
+         } // end switch(cmd)
 
-	    state.status.rqm=1;
-	    if(cmdinfo[cmd].returns > 0) {
-	      state.status.dio=1;
-	    }
-	    state.cmd_parms_ptr=0;
+         state.status.rqm=1;
+         if(cmdinfo[cmd].returns > 0) {
+            state.status.dio=1;
+         }
+         state.cmd_parms_ptr=0;
       } else {
-    	//printf("FDC: command parameter byte %d = %" PRIx64 ", expecting %d bytes for %s\n", state.cmd_parms_ptr-1, data, cmdinfo[state.cmd_parms[0] & 0x1f].parms, cmdinfo[state.cmd_parms[0] &0x1f].name);
+    	//printf("FDC: command parameter byte %d = %" PRIx64 ", expecting %d bytes for %s\n", state.cmd_parms_ptr-1, data, cmdinfo[state.cmd_parms[0] & 0x1f].parms, cmdinfo[state.cmd_parms[0] &0x1f].name.c_str());
       }
     }
 
