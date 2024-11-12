@@ -13,6 +13,3 @@ Do something like this:
   docker build -t es40.ubuntu20 --progress plain Dockerfile.ubuntu20
   docker run -it -p21264:21264 es40.ubuntu20 /bin/bash
 ```
-
-Currently there are Problems with Sensing the SCSI Disk / IO Read Errors on Ubuntu 18.04
-Have to figure out what is going on here... ;-)
