@@ -30,9 +30,9 @@ or cd into the test dir and run
 ### Important Note
 The rom test must run first. It will generate the decompressed firmware image.
 Currently this is only possible with the es40_idb executable because the Single-Step functionality
-is need and this is turned off in the es40 prg for performance reasons.
+is needed and this is turned off in the es40 executable for performance reasons.
 
-So ALWAYS use es40_idl if you need to decompress the firmware.
+So use es40_idl if you need to decompress the firmware.
 
 # Original README below
 
