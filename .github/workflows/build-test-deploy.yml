@@ -49,13 +49,13 @@ jobs:
       run: ${{github.workspace}}/test/run_testsuite.sh
 
     - name: Upload ES40 binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: es40-linux-x86-gcc-${{ env.BUILD_DATE }}
         path: ${{github.workspace}}/build/src/es40
 
     - name: Upload ES40_idb interactive debugger binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: es40_idb-linux-x86-gcc-${{ env.BUILD_DATE }}
         path: ${{github.workspace}}/build/src/es40_idb
