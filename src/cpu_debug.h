@@ -169,135 +169,19 @@ void          handle_debug_string(char* s);
       TRC_(true, false, "GO_PAL %04" PRIx64, offset);           \
   }
 
-#else
+#else // not defined(IDB)
 #define TRC_(down, up, x, y)  ;
 #define TRC(down, up)         ;
 #define TRC_BR                ;
-
 #define GO_PAL(offset)                   \
   {                                      \
     state.exc_addr = state.current_pc;   \
     set_pc(state.pal_base | offset | 1); \
   }
 #endif
+
 #if defined(IDB)
-#define DEBUG_XX  if(trc->get_fnc_name(this, state.current_pc &~U64(0x3), &funcname)) \
-  {                                                                                   \
-    if(bListing && !strcmp(funcname, ""))                                             \
-    {                                                                                 \
-      printf("%08" PRIx64 ": \"%s\"\n", state.current_pc,                             \
-             cSystem->PtrToMem(state.current_pc));                                    \
-      state.pc =                                                                      \
-        (                                                                             \
-          state.current_pc +                                                          \
-          strlen(cSystem->PtrToMem(state.current_pc)) +                               \
-          4                                                                           \
-        ) &~U64(0x3);                                                                 \
-      while(state.pc < 0x600000 && cSystem->ReadMem(state.pc, 32, this) == 0)         \
-        state.pc += 4;                                                                \
-      return;                                                                         \
-    }                                                                                 \
-    else if(bListing && !strcmp(funcname, "!SKIP"))                                   \
-    {                                                                                 \
-      while(state.pc < 0x600000 && cSystem->ReadMem(state.pc, 32, this) == 0)         \
-        state.pc += 4;                                                                \
-      return;                                                                         \
-    }                                                                                 \
-    else if(bListing && !strncmp(funcname, "!CHAR-", 6))                              \
-    {                                                                                 \
-      u64 xx_upto;                                                                    \
-      int xx_result;                                                                  \
-      xx_result = sscanf(&(funcname[6]), "%" PRIx64 "", &xx_upto);                    \
-      if(xx_result == 1)                                                              \
-      {                                                                               \
-        state.pc = state.current_pc;                                                  \
-        while(state.pc < xx_upto)                                                     \
-        {                                                                             \
-          printf("%08" PRIx64 ": \"%s\"\n", state.pc, cSystem->PtrToMem(state.pc));   \
-          state.pc += strlen(cSystem->PtrToMem(state.pc));                            \
-          while(state.pc < xx_upto && cSystem->ReadMem(state.pc, 8, this) == 0)       \
-            state.pc++;                                                               \
-        }                                                                             \
-        return;                                                                       \
-      }                                                                               \
-    }                                                                                 \
-    else if(bListing && !strncmp(funcname, "!LCHAR-", 7))                             \
-    {                                                                                 \
-      char  stringval[300];                                                           \
-      int   stringlen;                                                                \
-      u64   xx_upto;                                                                  \
-      int   xx_result;                                                                \
-      xx_result = sscanf(&(funcname[7]), "%" PRIx64 "", &xx_upto);                    \
-      if(xx_result == 1)                                                              \
-      {                                                                               \
-        state.pc = state.current_pc;                                                  \
-        while(state.pc < xx_upto)                                                     \
-        {                                                                             \
-          stringlen = (int) cSystem->ReadMem(state.pc++, 8, this);                    \
-          memset(stringval, 0, 300);                                                  \
-          strncpy(stringval, cSystem->PtrToMem(state.pc), stringlen);                 \
-          printf("%08" PRIx64 ": \"%s\"\n", state.pc - 1, stringval);                 \
-          state.pc += stringlen;                                                      \
-          while(state.pc < xx_upto && cSystem->ReadMem(state.pc, 8, this) == 0)       \
-            state.pc++;                                                               \
-        }                                                                             \
-        return;                                                                       \
-      }                                                                               \
-    }                                                                                 \
-    else if(bListing && !strncmp(funcname, "!X64-", 5))                               \
-    {                                                                                 \
-      printf("\n%s:\n", &(funcname[5]));                                              \
-      state.pc = state.current_pc;                                                    \
-      while                                                                           \
-      (                                                                               \
-        (state.pc == state.current_pc)                                                \
-      || !trc->get_fnc_name(this, state.pc, &funcname)                                \
-      )                                                                               \
-      {                                                                               \
-        printf("%08" PRIx64 ": %016" PRIx64 "\n", state.pc,                           \
-               cSystem->ReadMem(state.pc, 64, this));                                 \
-        state.pc += 8;                                                                \
-      }                                                                               \
-      return;                                                                         \
-    }                                                                                 \
-    else if(bListing && !strncmp(funcname, "!X32-", 5))                               \
-    {                                                                                 \
-      printf("\n%s:\n", &(funcname[5]));                                              \
-      state.pc = state.current_pc;                                                    \
-      while                                                                           \
-      (                                                                               \
-        (state.pc == state.current_pc)                                                \
-      || !trc->get_fnc_name(this, state.pc, &funcname)                                \
-      )                                                                               \
-      {                                                                               \
-        printf("%08" PRIx64 ": %08" PRIx64 "\n", state.pc,                            \
-               cSystem->ReadMem(state.pc, 32, this));                                 \
-        state.pc += 4;                                                                \
-      }                                                                               \
-      return;                                                                         \
-    }                                                                                 \
-    else if(!strncmp(funcname, ":", 1))                                               \
-    {                                                                                 \
-      sprintf(dbg_strptr, "%s:\n", funcname);                                         \
-      dbg_strptr += strlen(dbg_strptr);                                               \
-    }                                                                                 \
-    else                                                                              \
-    {                                                                                 \
-      sprintf(dbg_strptr, "\n%s:\n", funcname);                                       \
-      dbg_strptr += strlen(dbg_strptr);                                               \
-    }                                                                                 \
-  }                                                                                   \
-  sprintf(dbg_strptr, bListing ? "%08" PRIx64 ": " : "%016" PRIx64 "", state.current_pc); \
-  dbg_strptr += strlen(dbg_strptr);                                                   \
-  if(!bListing)                                                                       \
-    sprintf(dbg_strptr, "(%08x): ", ins);        \
-  else                                                                                \
-  {                                                                                   \
-    sprintf(dbg_strptr, "%08x %c%c%c%c: ", ins, printable((char) (ins)),              \
-            printable((char) (ins >> 8)), printable((char) (ins >> 16)),              \
-            printable((char) (ins >> 24)));                                           \
-  }                                                                                   \
-  dbg_strptr += strlen(dbg_strptr);
+#define DEBUG_XX trc->dbgOutput->generate_debug_output(this, state, ins, &dbg_strptr, bListing, funcname); 
 
 #define UNKNOWN1  if(bDisassemble)                        \
   {                                                       \
@@ -327,24 +211,23 @@ void          handle_debug_string(char* s);
     }                                         \
   }
 
-#define PRE_PAL(mnemonic)                                       \
+#define PRE_PAL                                                 \
   if(bDisassemble)                                              \
   {                                                             \
-    DEBUG_XX;                                                   \
     if(function < 0x40 || (function > 0x7f && function < 0xc0)) \
-      sprintf(dbg_strptr, #mnemonic " %s", PAL_NAME[function]); \
+      sprintf(dbg_strptr, "%s", PAL_NAME[function]);           \
     else                                                        \
-      sprintf(dbg_strptr, #mnemonic " ?%x?", function);         \
+      sprintf(dbg_strptr, " ?%x?", function);                   \
     dbg_strptr += strlen(dbg_strptr);                           \
   }
 
 #define POST_PAL  TRC(1, 0);
 
-#define PRE_BR(mnemonic)                                                 \
+#define PRE_BR                                                           \
   if(bDisassemble)                                                       \
   {                                                                      \
-    u64       dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
-    DEBUG_XX  sprintf(dbg_strptr, #mnemonic " r%d, ", REG_1 & 31);       \
+    u64 dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
+    sprintf(dbg_strptr,  "r%d, ", (REG_1 & 31));    \
     dbg_strptr += strlen(dbg_strptr);                                    \
     if(trc->get_fnc_name(this, dbg_x, &funcname))                        \
       sprintf(dbg_strptr, "%s", funcname);                               \
@@ -355,11 +238,11 @@ void          handle_debug_string(char* s);
 
 #define POST_BR TRC_BR;
 
-#define PRE_COND(mnemonic)                                               \
+#define PRE_COND                                                         \
   if(bDisassemble)                                                       \
   {                                                                      \
-    u64       dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
-    DEBUG_XX  sprintf(dbg_strptr, #mnemonic " r%d, ", REG_1 & 31);       \
+    u64 dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
+    sprintf(dbg_strptr,  "r%d, ", (REG_1 & 31));    \
     dbg_strptr += strlen(dbg_strptr);                                    \
     if(trc->get_fnc_name(this, dbg_x, &funcname))                        \
       sprintf(dbg_strptr, "%s", funcname);                               \
@@ -375,11 +258,11 @@ void          handle_debug_string(char* s);
 
 #define POST_COND TRC_BR;
 
-#define PRE_FCOND(mnemonic)                                              \
+#define PRE_FCOND                                                        \
   if(bDisassemble)                                                       \
   {                                                                      \
-    u64       dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
-    DEBUG_XX  sprintf(dbg_strptr, #mnemonic " f%d, ", FREG_1);           \
+    u64 dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
+    sprintf(dbg_strptr,  "f%d, ", FREG_1);           \
     dbg_strptr += strlen(dbg_strptr);                                    \
     if(trc->get_fnc_name(this, dbg_x, &funcname))                        \
       sprintf(dbg_strptr, "%s", funcname);                               \
@@ -395,11 +278,11 @@ void          handle_debug_string(char* s);
 
 #define POST_FCOND  TRC_BR;
 
-#define PRE_BSR(mnemonic)                                                \
+#define PRE_BSR                                                          \
   if(bDisassemble)                                                       \
   {                                                                      \
-    u64       dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
-    DEBUG_XX  sprintf(dbg_strptr, #mnemonic " r%d, ", REG_1 & 31);       \
+    u64 dbg_x = (state.current_pc + 4 + (DISP_21 * 4)) &~U64(0x3); \
+    sprintf(dbg_strptr,  "r%d, ", (REG_1 & 31));    \
     dbg_strptr += strlen(dbg_strptr);                                    \
     if(trc->get_fnc_name(this, dbg_x, &funcname))                        \
       sprintf(dbg_strptr, "%s", funcname);                               \
@@ -417,10 +300,10 @@ void          handle_debug_string(char* s);
     TRC(1, 1);                    \
   }
 
-#define PRE_JMP(mnemonic)                                                         \
+#define PRE_JMP                                                                   \
   if(bDisassemble)                                                                \
   {                                                                               \
-    DEBUG_XX  sprintf(dbg_strptr, #mnemonic " r%d, r%d", REG_1 & 31, REG_2 & 31); \
+    sprintf(dbg_strptr,  "r%d, r%d", (REG_1 & 31), (REG_2 & 31)); \
     dbg_strptr += strlen(dbg_strptr);                                             \
     if(!bListing)                                                                 \
     {                                                                             \
@@ -438,10 +321,10 @@ void          handle_debug_string(char* s);
     TRC(1, 1);                    \
   }
 
-#define PRE_RET(mnemonic)                                        \
+#define PRE_RET                                                  \
   if(bDisassemble)                                               \
   {                                                              \
-    DEBUG_XX  sprintf(dbg_strptr, #mnemonic " r%d", REG_2 & 31); \
+    sprintf(dbg_strptr,  "r%d", (REG_2 & 31));     \
     dbg_strptr += strlen(dbg_strptr);                            \
     if(!bListing)                                                \
     {                                                            \
@@ -452,42 +335,33 @@ void          handle_debug_string(char* s);
 
 #define POST_RET  TRC(0, 1);
 
-#define PRE_MFPR(mnemonic)                                                     \
+#define PRE_MFPR                                                               \
   if(bDisassemble)                                                             \
   {                                                                            \
-    DEBUG_XX;                                                                  \
-    sprintf(dbg_strptr, #mnemonic " r%d, %s", REG_1 & 31, IPR_NAME[function]); \
+    sprintf(dbg_strptr,  "r%d, %s", (REG_1 & 31), IPR_NAME[function]); \
     dbg_strptr += strlen(dbg_strptr);                                          \
   }
 
 #define POST_MFPR POST_X64(state.r[REG_1]);
 
-#define PRE_MTPR(mnemonic)                                                     \
+#define PRE_MTPR                                                               \
   if(bDisassemble)                                                             \
   {                                                                            \
-    DEBUG_XX;                                                                  \
-    sprintf(dbg_strptr, #mnemonic " r%d, %s", REG_2 & 31, IPR_NAME[function]); \
+    sprintf(dbg_strptr,  "r%d, %s", (REG_2 & 31), IPR_NAME[function]); \
     dbg_strptr += strlen(dbg_strptr);                                          \
   }
 
 #define POST_MTPR POST_X64(state.r[REG_2]);
 
-#define PRE_NOP(mnemonic)              \
-  if(bDisassemble)                     \
-  {                                    \
-    DEBUG_XX;                          \
-    sprintf(dbg_strptr, #mnemonic ""); \
-    dbg_strptr += strlen(dbg_strptr);  \
-  }
+#define PRE_NOP  ;
 
 #define POST_NOP  ;
 
-#define PRE_MEM(mnemonic)                                                        \
+#define PRE_MEM                                                                  \
   if(bDisassemble)                                                               \
   {                                                                              \
-    DEBUG_XX;                                                                    \
-    sprintf(dbg_strptr, #mnemonic " r%d, %04xH(r%d)", REG_1 & 31, (u32) DISP_16, \
-            REG_2 & 31);                                                         \
+    sprintf(dbg_strptr,  "r%d, %04xH(r%d)", (REG_1 & 31), (u32) (DISP_16), \
+            (REG_2 & 31));                                              \
     dbg_strptr += strlen(dbg_strptr);                                            \
     if(!bListing)                                                                \
     {                                                                            \
@@ -498,18 +372,17 @@ void          handle_debug_string(char* s);
 
 #define POST_MEM  POST_X64(state.r[REG_1]);
 
-#define PRE_R12_R3(mnemonic)                                           \
+#define PRE_R12_R3                                                     \
   if(bDisassemble)                                                     \
   {                                                                    \
-    DEBUG_XX;                                                          \
-    sprintf(dbg_strptr, #mnemonic " r%d, ", REG_1 & 31);               \
+    sprintf(dbg_strptr,  "r%d, ", (REG_1 & 31));             \
     dbg_strptr += strlen(dbg_strptr);                                  \
     if(ins & 0x1000)                                                   \
       sprintf(dbg_strptr, "%02" PRIx64 "H", V_2);                      \
     else                                                               \
-      sprintf(dbg_strptr, "r%d", REG_2 & 31);                          \
+      sprintf(dbg_strptr, "r%d", (REG_2 & 31));                        \
     dbg_strptr += strlen(dbg_strptr);                                  \
-    sprintf(dbg_strptr, ", r%d", REG_3 & 31);                          \
+    sprintf(dbg_strptr, ", r%d", (REG_3 & 31));                        \
     dbg_strptr += strlen(dbg_strptr);                                  \
     if(!bListing)                                                      \
     {                                                                  \
@@ -523,11 +396,10 @@ void          handle_debug_string(char* s);
 // Pre-debugging macro for floating-point instructions that have Fa and Fb
 
 // as input and Fc as output.
-#define PRE_F12_F3(mnemonic)                                                 \
+#define PRE_F12_F3                                                           \
   if(bDisassemble)                                                           \
   {                                                                          \
-    DEBUG_XX;                                                                \
-    sprintf(dbg_strptr, #mnemonic " f%d, f%d, f%d", FREG_1, FREG_2, FREG_3); \
+    sprintf(dbg_strptr,  "f%d, f%d, f%d", FREG_1, FREG_2, FREG_3); \
     dbg_strptr += strlen(dbg_strptr);                                        \
     if(!bListing)                                                            \
     {                                                                        \
@@ -541,11 +413,10 @@ void          handle_debug_string(char* s);
 // as input and Fc as output.
 #define POST_F12_F3 POST_X64(state.f[FREG_3]);
 
-#define PRE_R1_F3(mnemonic)                                          \
+#define PRE_R1_F3                                                    \
   if(bDisassemble)                                                   \
   {                                                                  \
-    DEBUG_XX;                                                        \
-    sprintf(dbg_strptr, #mnemonic " r%d, f%d ", REG_1 & 31, FREG_3); \
+    sprintf(dbg_strptr,  "r%d, f%d ", (REG_1 & 31), FREG_3);  \
     dbg_strptr += strlen(dbg_strptr);                                \
     if(!bListing)                                                    \
     {                                                                \
@@ -556,11 +427,10 @@ void          handle_debug_string(char* s);
 
 #define POST_R1_F3  POST_X64(state.f[FREG_3]);
 
-#define PRE_F1_R3(mnemonic)                                          \
+#define PRE_F1_R3                                                    \
   if(bDisassemble)                                                   \
   {                                                                  \
-    DEBUG_XX;                                                        \
-    sprintf(dbg_strptr, #mnemonic " f%d, r%d ", FREG_1, REG_3 & 31); \
+    sprintf(dbg_strptr,  "f%d, r%d ", FREG_1, (REG_3 & 31));  \
     dbg_strptr += strlen(dbg_strptr);                                \
     if(!bListing)                                                    \
     {                                                                \
@@ -571,28 +441,24 @@ void          handle_debug_string(char* s);
 
 #define POST_F1_R3  POST_X64(state.r[REG_3]);
 
-#define PRE_X_F1(mnemonic)                               \
+#define PRE_X_F1                                         \
   if(bDisassemble)                                       \
   {                                                      \
-    DEBUG_XX;                                            \
-    sprintf(dbg_strptr, #mnemonic " f%d ", FREG_1 & 31); \
+    sprintf(dbg_strptr,  "f%d ", (FREG_1 & 31));      \
     dbg_strptr += strlen(dbg_strptr);                    \
   }
 
 #define POST_X_F1 POST_X64(state.f[FREG_1]);
 
-#define PRE_R2_R3(mnemonic)                    \
+#define PRE_R2_R3                              \
   if(bDisassemble)                             \
   {                                            \
-    DEBUG_XX;                                  \
-    sprintf(dbg_strptr, #mnemonic " ");        \
-    dbg_strptr += strlen(dbg_strptr);          \
     if(ins & 0x1000)                           \
       sprintf(dbg_strptr, "%02" PRIx64 "H", V_2); \
     else                                       \
-      sprintf(dbg_strptr, "r%d", REG_2 & 31);  \
+       sprintf(dbg_strptr, "r%d", (REG_2 & 31));        \
     dbg_strptr += strlen(dbg_strptr);          \
-    sprintf(dbg_strptr, ", r%d", REG_3 & 31);  \
+    sprintf(dbg_strptr, ", r%d", (REG_3 & 31)); \
     dbg_strptr += strlen(dbg_strptr);          \
     if(!bListing)                              \
     {                                          \
@@ -603,32 +469,27 @@ void          handle_debug_string(char* s);
 
 #define POST_R2_R3  POST_X64(state.r[REG_3]);
 
-#define PRE_X_R1(mnemonic)                             \
+#define PRE_X_R1                                       \
   if(bDisassemble)                                     \
   {                                                    \
-    DEBUG_XX;                                          \
-    sprintf(dbg_strptr, #mnemonic " r%d", REG_1 & 31); \
+    sprintf(dbg_strptr,  "r%d", (REG_1 & 31));        \
     dbg_strptr += strlen(dbg_strptr);                  \
   }
 
 #define POST_X_R1 POST_X64(state.r[REG_1]);
 
-#define PRE_X_R3(mnemonic)                             \
+#define PRE_X_R3                                       \
   if(bDisassemble)                                     \
   {                                                    \
-    DEBUG_XX;                                          \
-    sprintf(dbg_strptr, #mnemonic " r%d", REG_3 & 31); \
+    sprintf(dbg_strptr,  "r%d", (REG_3 & 31));        \
     dbg_strptr += strlen(dbg_strptr);                  \
   }
 
 #define POST_X_R3 POST_X64(state.r[REG_3]);
 
-#define PRE_HW_LD(mnemonic)                                                         \
+#define PRE_HW_LD                                                                   \
   if(bDisassemble)                                                                  \
   {                                                                                 \
-    DEBUG_XX;                                                                       \
-    sprintf(dbg_strptr, #mnemonic);                                                 \
-    dbg_strptr += strlen(dbg_strptr);                                               \
     switch(function &~1)                                                            \
     {                                                                               \
     case 0:   sprintf(dbg_strptr, "/Phys"); break;                                  \
@@ -639,7 +500,7 @@ void          handle_debug_string(char* s);
     case 14:  sprintf(dbg_strptr, "/Alt/Chk"); break;                               \
     }                                                                               \
     dbg_strptr += strlen(dbg_strptr);                                               \
-    sprintf(dbg_strptr, " r%d, %04xH(r%d)", REG_1 & 31, (u32) DISP_12, REG_2 & 31); \
+    sprintf(dbg_strptr, "r%d, %04xH(r%d)", (REG_1 & 31), (u32) DISP_12, (REG_2 & 31)); \
     dbg_strptr += strlen(dbg_strptr);                                               \
     if(!bListing)                                                                   \
     {                                                                               \
@@ -650,12 +511,9 @@ void          handle_debug_string(char* s);
 
 #define POST_HW_LD  POST_X64(state.r[REG_1]);
 
-#define PRE_HW_ST(mnemonic)                                                         \
+#define PRE_HW_ST                                                                   \
   if(bDisassemble)                                                                  \
   {                                                                                 \
-    DEBUG_XX;                                                                       \
-    sprintf(dbg_strptr, #mnemonic);                                                 \
-    dbg_strptr += strlen(dbg_strptr);                                               \
     switch(function &~1)                                                            \
     {                                                                               \
     case 0:   sprintf(dbg_strptr, "/Phys"); break;                                  \
@@ -663,7 +521,7 @@ void          handle_debug_string(char* s);
     case 12:  sprintf(dbg_strptr, "/Alt"); break;                                   \
     }                                                                               \
     dbg_strptr += strlen(dbg_strptr);                                               \
-    sprintf(dbg_strptr, " r%d, %04xH(r%d)", REG_1 & 31, (u32) DISP_12, REG_2 & 31); \
+    sprintf(dbg_strptr, "r%d, %04xH(r%d)", (REG_1 & 31), (u32) DISP_12, (REG_2 & 31)); \
     dbg_strptr += strlen(dbg_strptr);                                               \
     if(!bListing)                                                                   \
     {                                                                               \
@@ -675,12 +533,11 @@ void          handle_debug_string(char* s);
 #define POST_HW_ST  POST_X64(state.r[REG_1]);
 
 // Pre-debugging macro for floating-point load/store instructions.
-#define PRE_FMEM(mnemonic)                                                   \
+#define PRE_FMEM                                                             \
   if(bDisassemble)                                                           \
   {                                                                          \
-    DEBUG_XX;                                                                \
-    sprintf(dbg_strptr, #mnemonic " f%d, %04xH(r%d)", FREG_1, (u32) DISP_16, \
-            REG_2 & 31);                                                     \
+    sprintf(dbg_strptr,  "f%d, %04xH(r%d)", FREG_1, (u32) (DISP_16), \
+            (REG_2 & 31));                                              \
     dbg_strptr += strlen(dbg_strptr);                                        \
     if(!bListing)                                                            \
     {                                                                        \
@@ -695,11 +552,10 @@ void          handle_debug_string(char* s);
 // Pre-debugging macro for floating-point instructions that have Fb as input
 
 // And Fc as output.
-#define PRE_F2_F3(mnemonic)                                     \
+#define PRE_F2_F3                                               \
   if(bDisassemble)                                              \
   {                                                             \
-    DEBUG_XX;                                                   \
-    sprintf(dbg_strptr, #mnemonic " f%d, f%d", FREG_2, FREG_3); \
+    sprintf(dbg_strptr,  "f%d, f%d", FREG_2, FREG_3); \
     dbg_strptr += strlen(dbg_strptr);                           \
     if(!bListing)                                               \
     {                                                           \
@@ -727,7 +583,13 @@ void          handle_debug_string(char* s);
 
 // the instruction if needed.
 #define OP(mnemonic, format)       \
-  PRE_##format(mnemonic);          \
+  if(bDisassemble)                 \
+  {                                \
+    DEBUG_XX;                      \
+    sprintf(dbg_strptr, "%s ", #mnemonic); \
+    dbg_strptr += strlen(dbg_strptr); \
+  }                                \
+  PRE_##format;                    \
   if(!bListing)                    \
   {                                \
     DO_##mnemonic;                 \
@@ -737,7 +599,13 @@ void          handle_debug_string(char* s);
 
 // Execute a function rather than a DO_<mnemonic> macro for an instruction
 #define OP_FNC(mnemonic, format)   \
-  PRE_##format(mnemonic);          \
+  if(bDisassemble)                 \
+  {                                \
+    DEBUG_XX;                      \
+    sprintf(dbg_strptr, "%s ", #mnemonic); \
+    dbg_strptr += strlen(dbg_strptr); \
+  }                                \
+  PRE_##format                     \
   if(!bListing)                    \
   {                                \
     mnemonic();                    \

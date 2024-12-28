@@ -218,23 +218,13 @@
 #if !defined(INCLUDED_ALPHACPU_H)
 #define INCLUDED_ALPHACPU_H
 
+#include "AlphaCPUState.h"
+#include "StateCapture.h"
 #include "SystemComponent.h"
 #include "System.h"
 #include "cpu_defs.h"
 
-/// Number of entries in the Instruction Cache
-#define ICACHE_ENTRIES    1024
-// Size of Instruction Cache entries in DWORDS (instructions)
-#define ICACHE_LINE_SIZE  512
-/** These bits should match to have an Instruction Cache hit.
-    This includes bit 0, because it indicates PALmode . */
-#define ICACHE_MATCH_MASK (u64) (U64(0x1) - (ICACHE_LINE_SIZE * 4))
-/// DWORD (instruction) number of an address in an ICache entry.
-#define ICACHE_INDEX_MASK (u64) (ICACHE_LINE_SIZE - U64(0x1))
-/// Byte numer of an address in an ICache entry.
-#define ICACHE_BYTE_MASK  (u64) (ICACHE_INDEX_MASK << 2)
-/// Number of entries in each Translation Buffer
-#define TB_ENTRIES        16
+class IICache;
 
 #ifdef IDB
 #define NEXT                        \
@@ -263,12 +253,10 @@
 class CAlphaCPU : public CSystemComponent, public CRunnable
 {
   public:
-    void          flush_icache_asm();
     virtual int   SaveState(FILE* f);
     virtual int   RestoreState(FILE* f);
     void          irq_h(int number, bool assert, int delay);
     int           get_cpuid();
-    void          flush_icache();
 
     virtual void  run();    // Poco Thread entry point
     inline void   mips_estimate();
@@ -292,9 +280,6 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     u64           get_hwpcb(void);
     u64           get_pc();
     u64           get_pal_base();
-
-    void          enable_icache();
-    void          restore_icache();
 
     bool          get_waiting() { return state.wait_for_start; }
     void          stop_waiting() { state.wait_for_start = false; }
@@ -328,12 +313,23 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     virtual void  init();
     virtual void  start_threads();
     virtual void  stop_threads();
+
+    void          run_for_cycles(int num_cycles, std::vector<StateCapture> & log );
+
+    void enable_icache();
+    void restore_icache();
+      
   private:
     CThread * myThread;
     CSemaphore mySemaphore;
-    bool            StopThread;
+    IICache * myICache;
+    bool StopThread;
 
-    int             get_icache(u64 address, u32* data);
+    // Instruction Cache
+    int get_icache(u64 address, u32* data);
+    void flush_icache();
+    void flush_icache_asm();
+
     int             FindTBEntry(u64 virt, int flags);
     void            add_tb(u64 virt, u64 pte_phys, u64 pte_flags, int flags);
     void            add_tb_i(u64 virt, u64 pte);
@@ -442,8 +438,6 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     int             vmspal_int_initiate_exception();
     int             vmspal_int_initiate_interrupt();
 
-    bool            icache_enabled;
-
     // ... ... ...
     u64             cc_large;
     u64             start_icount;
@@ -457,109 +451,7 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     u64             next_timer_int;
     u64             cpu_hz;
 
-    /// The state structure contains all elements that need to be saved to the statefile
-    struct SCPU_state
-    {
-      bool  wait_for_start;
-      u64   pal_base;       /**< IPR PAL_BASE [HRM: p 5-15] */
-      u64   pc;             /**< Program counter */
-      u64   cc;             /**< IPR CC: Cycle counter [HRM p 5-3] */
-      u64   r[64];          /**< Integer registers (0-31 normal, 32-63 shadow) */
-      u64   dc_stat;        /**< IPR DC_STAT: Dcache status [HRM p 5-31..32] */
-      bool  ppcen;          /**< IPR PCTX: ppce (proc perf counting enable) [HRM p 5-21..23] */
-      u64   i_stat;         /**< IPR I_STAT: Ibox status [HRM p 5-18..20] */
-      u64   pctr_ctl;       /**< IPR PCTR_CTL [HRM p 5-23..25] */
-      bool  cc_ena;         /**< IPR CC_CTL: Cycle counter enabled [HRM p 5-3] */
-      u32   cc_offset;      /**< IPR CC: Cycle counter offset [HRM p 5-3] */
-      u64   dc_ctl;         /**< IPR DC_CTL: Dcache control [HRM p 5-30..31] */
-      int   alt_cm;         /**< IPR DTB_ALTMODE: alternative cm for HW_LD/HW_ST [HRM p 5-26..27] */
-      int   smc;            /**< IPR M_CTL: smc (speculative miss control) [HRM p 5-29..30] */
-      bool  fpen;           /**< IPR PCTX: fpe (floating point enable) [HRM p 5-21..23] */
-      bool  sde;            /**< IPR I_CTL: sde[1] (PALshadow enable) [HRM p 5-15..18] */
-      u64   fault_va;       /**< IPR VA: virtual address of last Dstream miss or fault [HRM p 5-4] */
-      u64   exc_sum;        /**< IPR EXC_SUM: exception summary [HRM p 5-13..15] */
-      int   i_ctl_va_mode;  /**< IPR I_CTL: (va_form_32 + va_48) [HRM p 5-15..17] */
-      int   va_ctl_va_mode; /**< IPR VA_CTL: (va_form_32 + va_48) [HRM p 5-4] */
-      u64   i_ctl_vptb;     /**< IPR I_CTL: vptb (virtual page table base) [HRM p 5-15..16] */
-      u64   va_ctl_vptb;    /**< IPR VA_CTL: vptb (virtual page table base) [HRM p 5-4] */
-      int   cm;           /**< IPR IER_CM: cm (current mode) [HRM p 5-9..10] */
-      int   asn;          /**< IPR PCTX: asn (address space number) [HRM p 5-21..22] */
-      int   asn0;         /**< IPR DTB_ASN0: asn (address space number) [HRM p 5-28] */
-      int   asn1;         /**< IPR DTB_ASN1: asn (address space number) [HRM p 5-28] */
-      int   eien;         /**< IPR IER_CM: eien (external interrupt enable) [HRM p 5-9..10] */
-      int   slen;         /**< IPR IER_CM: slen (serial line interrupt enable) [HRM p 5-9..10] */
-      int   cren;         /**< IPR IER_CM: cren (corrected read error int enable) [HRM p 5-9..10] */
-      int   pcen;         /**< IPR IER_CM: pcen (perf counter interrupt enable) [HRM p 5-9..10] */
-      int   sien;         /**< IPR IER_CM: sien (software interrupt enable) [HRM p 5-9..10] */
-      int   asten;        /**< IPR IER_CM: asten (AST interrupt enable) [HRM p 5-9..10] */
-      int   sir;          /**< IPR SIRR: sir (software interrupt request) [HRM p 5-10..11] */
-      int   eir;          /**< external interrupt request */
-      int   slr;          /**< serial line interrupt request */
-      int   crr;          /**< corrected read error interrupt */
-      int   pcr;          /**< perf counter interrupt */
-      int   astrr;        /**< IPR PCTX: astrr (AST request) [HRM p 5-21..22] */
-      int   aster;        /**< IPR PCTX: aster (AST enable) [HRM p 5-21..22] */
-      u64   i_ctl_other;  /**< various bits in IPR I_CTL that have no meaning to the emulator */
-      u64   mm_stat;      /**< IPR MM_STAT: memory management status [HRM p 5-28..29] */
-      bool  hwe;          /**< IPR I_CLT: hwe (allow palmode ins in kernel mode) [HRM p 5-15..17] */
-      int   m_ctl_spe;    /**< IPR M_CTL: spe (Super Page mode enabled) [HRM p 5-29..30] */
-      int   i_ctl_spe;    /**< IPR I_CTL: spe (Super Page mode enabled) [HRM p 5-15..18] */
-      u64   exc_addr;     /**< IPR EXC_ADDR: address of last exception [HRM p 5-8] */
-      u64   pmpc;
-      u64   fpcr;         /**< Floating-Point Control Register [HRM p 2-36] */
-      bool  bIntrFlag;
-      u64   current_pc;   /**< Virtual address of current instruction */
-
-      /**
-       * \brief Instruction cache entry.
-       *
-       * An instruction cache entry contains the address and address space number
-       * (ASN) + 16 32-bit instructions. [HRM 2-11]
-       **/
-      struct SICache
-      {
-        int   asn;        /**< Address Space Number */
-        u32   data[ICACHE_LINE_SIZE]; /**< Actual cached instructions  */
-        u64   address;          /**< Address of first instruction */
-        u64   p_address;        /**< Physical address of first instruction */
-        bool  asm_bit;          /**< Address Space Match bit */
-        bool  valid;            /**< Valid cache entry */
-      } icache[ICACHE_ENTRIES]; /**< Instruction cache entries [HRM p 2-11] */
-      int next_icache;          /**< Number of next cache entry to use */
-      int last_found_icache;    /**< Number of last cache entry found */
-
-      /**
-       * \brief Translation Buffer Entry.
-       *
-       * A translation buffer entry provides the mapping from a page of virtual memory to a page of physical memory.
-       **/
-      struct STBEntry
-      {
-        u64   virt;         /**< Virtual address of page*/
-        u64   phys;         /**< Physical address of page*/
-        u64   match_mask;   /**< The virtual address has to match for these bits to be a hit*/
-        u64   keep_mask;    /**< This part of the virtual address is OR-ed with the phys address*/
-        int   asn;          /**< Address Space Number*/
-        int   asm_bit;      /**< Address Space Match bit*/
-        int   access[2][4]; /**< Access permitted [read/write][current mode]*/
-        int   fault[3];     /**< Fault on access [read/write/execute]*/
-        bool  valid;        /**< Valid entry*/
-      } tb[2][TB_ENTRIES];  /**< Translation buffer entries */
-
-      int   next_tb[2];     /**< Number of next translation buffer entry to use */
-      int   last_found_tb[2][2];  /**< Number of last translation buffer entry found */
-      u32   rem_ins_in_page;      /**< Number of instructions remaining in current page */
-      u64   pc_phys;
-      u64   f[64];    /**< Floating point registers (0-31 normal, 32-63 shadow) */
-      int   iProcNum; /**< number of the current processor (0 in a 1-processor system) */
-      u64   instruction_count;  /**< Number of times doclock has been called */
-      u64   last_tb_virt;
-      bool  pal_vms;            /**< True if the PALcode base is 0x8000 (=VMS PALcode base) */
-      bool  check_int;          /**< True if an interrupt may be pending */
-      int   irq_h_timer[6];     /**< Timers for delayed IRQ_H[0:5] assertion */
-      bool  check_timers;
-      bool  single_step_mode;   /** true, if CPU should only do one step in execute function */
-    } state;  /**< Determines CPU state that needs to be saved to the state file */
+    struct SCPU_state state;   /**< Determines CPU state that needs to be saved to the state file */
 
 #ifdef IDB
     u64 current_pc_physical;  /**< Physical address of current instruction */
@@ -579,161 +471,12 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     )
 
 /**
- * Empty the instruction cache.
- **/
-inline void CAlphaCPU::flush_icache()
-{
-  if(icache_enabled)
-  {
-
-    //  memset(state.icache,0,sizeof(state.icache));
-    int i;
-    for(i = 0; i < ICACHE_ENTRIES; i++)
-    {
-      state.icache[i].valid = false;
-
-      //    state.icache[i].asm_bit = true;
-    }
-
-    state.next_icache = 0;
-    state.last_found_icache = 0;
-  }
-}
-
-/**
- * Empty the instruction cache of lines with the ASM bit clear.
- **/
-inline void CAlphaCPU::flush_icache_asm()
-{
-  if(icache_enabled)
-  {
-    int i;
-    for(i = 0; i < ICACHE_ENTRIES; i++)
-      if(!state.icache[i].asm_bit)
-        state.icache[i].valid = false;
-  }
-}
-
-/**
  * Set the PALcode BASE register, and determine whether we're running VMS PALcode.
  **/
 inline void CAlphaCPU::set_PAL_BASE(u64 pb)
 {
   state.pal_base = pb;
   state.pal_vms = (pb == U64(0x8000));
-}
-
-/**
- * Get an instruction from the instruction cache.
- * If necessary, fill a new cache block from memory.
- *
- * get_icache checks all cache entries, to see if there is a
- * cache entry that matches the current address space number,
- * and that contains the address we're looking for. If it 
- * exists, the instruction is fetched from this cache,
- * otherwise, the physical address for the instruction is
- * calculated, and the cache block is filled.
- *
- * The last cache entry that was a hit is remembered, so that
- * cache entry is checked first on the next instruction. (very
- * likely to be the same cache block)
- *
- * It would be easiest to do without the instruction cache
- * altogether, but unfortunately SRM uses self-modifying
- * code, that relies on the correct instruction stream to 
- * remain in the cache.
- **/
-inline int CAlphaCPU::get_icache(u64 address, u32* data)
-{
-  int   i = state.last_found_icache;
-  u64   v_a;
-  u64   p_a;
-  int   result;
-  bool  asm_bit;
-
-  if(icache_enabled)
-  {
-    if(state.icache[i].valid
-     && (state.icache[i].asn == state.asn || state.icache[i].asm_bit)
-     && state.icache[i].address == (address & ICACHE_MATCH_MASK))
-    {
-      *data = endian_32(state.icache[i].data[(address >> 2) & ICACHE_INDEX_MASK]);
-#ifdef IDB
-      current_pc_physical = state.icache[i].p_address + (address & ICACHE_BYTE_MASK);
-#endif
-      return 0;
-    }
-
-    for(i = 0; i < ICACHE_ENTRIES; i++)
-    {
-      if(state.icache[i].valid
-       && (state.icache[i].asn == state.asn || state.icache[i].asm_bit)
-       && state.icache[i].address == (address & ICACHE_MATCH_MASK))
-      {
-        state.last_found_icache = i;
-        *data = endian_32(state.icache[i].data[(address >> 2) & ICACHE_INDEX_MASK]);
-
-#ifdef IDB
-        current_pc_physical = state.icache[i].p_address + (address & ICACHE_BYTE_MASK);
-#endif
-        return 0;
-      }
-    }
-
-    v_a = address & ICACHE_MATCH_MASK;
-
-    if(address & 1)
-    {
-      p_a = v_a &~U64(0x1);
-      asm_bit = true;
-    }
-    else
-    {
-      result = virt2phys(v_a, &p_a, ACCESS_EXEC, &asm_bit, 0);
-      if(result)
-        return result;
-    }
-
-    memcpy(state.icache[state.next_icache].data, cSystem->PtrToMem(p_a),
-           ICACHE_LINE_SIZE * 4);
-
-    state.icache[state.next_icache].valid = true;
-    state.icache[state.next_icache].asn = state.asn;
-    state.icache[state.next_icache].asm_bit = asm_bit;
-    state.icache[state.next_icache].address = address & ICACHE_MATCH_MASK;
-    state.icache[state.next_icache].p_address = p_a;
-
-    *data = endian_32(state.icache[state.next_icache].data[(address >> 2) & ICACHE_INDEX_MASK]);
-
-#ifdef IDB
-    current_pc_physical = state.icache[state.next_icache].p_address + (address & ICACHE_BYTE_MASK);
-#endif
-    state.last_found_icache = state.next_icache;
-    state.next_icache++;
-    if(state.next_icache == ICACHE_ENTRIES)
-      state.next_icache = 0;
-    return 0;
-  }
-
-  // icache disabled
-  if(address & 1)
-  {
-    state.pc_phys = address &~U64(0x3);
-    state.rem_ins_in_page = 1;
-  }
-  else
-  {
-    if(!state.rem_ins_in_page)
-    {
-      result = virt2phys(address, &state.pc_phys, ACCESS_EXEC, &asm_bit, 0);
-      if(result)
-        return result;
-      state.rem_ins_in_page = 2048 - ((((u32) address) >> 2) & 2047);
-    }
-  }
-
-  *data = (u32) cSystem->ReadMem(state.pc_phys, 32, this);
-  return 0;
 }
 
 /**

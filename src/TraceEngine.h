@@ -98,6 +98,8 @@
 #if defined(IDB)
 #include "datatypes.h"
 
+class DebugOutput;
+
 /// Structure used to define named functions within memory.
 struct STraceFunction
 {
@@ -148,6 +150,8 @@ class CTraceEngine
     int     parse(char command[100][100]);
     void    run_script(const char* filename);
     void    list_all();
+
+    DebugOutput*          dbgOutput;
   protected:
     class CSystem*        cSystem;
     int                   trcfncs;

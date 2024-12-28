@@ -59,6 +59,7 @@ es40_SOURCES = AliM1543C.cpp \
        AlphaSim.cpp \
        Cirrus.cpp \
        Configurator.cpp \
+       DebugOutput.cpp \
        DEC21143.cpp \
        Disk.cpp \
        DiskController.cpp \
@@ -71,6 +72,7 @@ es40_SOURCES = AliM1543C.cpp \
        Ethernet.cpp \
        Flash.cpp \
        FloppyController.cpp \
+       ICache.cpp \
        Keyboard.cpp \
        lockstep.cpp \
        PCIDevice.cpp \

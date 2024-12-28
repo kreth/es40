@@ -165,6 +165,7 @@
 #include "DPR.h"
 #include "Flash.h"
 #include "lockstep.h"
+#include "DebugOutput.h"
 #include <signal.h>
 
 CTraceEngine*   trc;
@@ -229,6 +230,7 @@ CTraceEngine::CTraceEngine(CSystem* sys)
 
   current_trace_file = stdout;
   bBreakPoint = false;
+  dbgOutput = new DebugOutput(this, sys);
 }
 
 /**
@@ -239,6 +241,7 @@ CTraceEngine::~CTraceEngine(void)
   int i;
   for(i = 0; i < iNumPRBRs; i++)
     fclose(asPRBRs[i].f);
+  delete dbgOutput;
 }
 
 /**

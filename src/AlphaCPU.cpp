@@ -350,6 +350,8 @@
 #include "cpu_mvi.h"
 #include "cpu_pal.h"
 #include "cpu_debug.h"
+#include "ICache.h"
+#include "DebugOutput.h"
 
 #if !defined(HAVE_NEW_FP)
 #include "es40_float.h"
@@ -391,7 +393,10 @@ void CAlphaCPU::run()
  * Constructor.
  **/
 CAlphaCPU::CAlphaCPU(CConfigurator* cfg, CSystem* system) : CSystemComponent(cfg, system), mySemaphore(0, 1)
-{ }
+{
+  myICache = new ICache(cfg, system);
+  StopThread = false;
+}
 
 /**
  * Initialize the CPU.
@@ -406,9 +411,10 @@ void CAlphaCPU::init()
 
   state.wait_for_start = (state.iProcNum == 0) ? false : true;
   state.single_step_mode = false;
-  icache_enabled = true;
+  enable_icache();
   flush_icache();
-  icache_enabled = myCfg->get_bool_value("icache", false);
+  // read config and enable icache accordingly
+  restore_icache();
 
   tbia(ACCESS_READ);
   tbia(ACCESS_EXEC);
@@ -481,8 +487,43 @@ void CAlphaCPU::stop_threads()
  **/
 CAlphaCPU::~CAlphaCPU()
 {
+  delete myICache;
   stop_threads();
 }
+
+// ICache
+int CAlphaCPU::get_icache(u64 address, u32* data)
+{
+    return myICache->get_icache(address, data, state, this);
+}
+void CAlphaCPU::flush_icache()
+{
+    myICache->flush_icache(state);
+}
+
+void CAlphaCPU::flush_icache_asm()
+{
+    myICache->flush_icache_asm(state);
+}
+
+/**
+ * \brief Enable i-cache regardles of config file.
+ *
+ * Required for SRM-ROM decompression.
+ **/
+void CAlphaCPU::enable_icache()
+{
+   myICache->enable_icache(state);
+}
+
+/**
+ * \brief Enable or disable i-cache depending on config file.
+ **/
+void CAlphaCPU::restore_icache()
+{
+  myICache->restore_icache(state);
+}
+
 
 #if defined(IDB)
 char    dbg_string[1000];
@@ -1501,6 +1542,8 @@ unknown:
   UNKNOWN1;
 
 exit:
+  // fprintf(stderr, "state.pc=" "%016" PRIx64 ", state.current_pc=" "%016" PRIx64 "\n",
+  //         state.pc, state.current_pc);
   return;
 }
 
@@ -2273,31 +2316,6 @@ void CAlphaCPU::tbis(u64 virt, int flags)
 }
 
 //\}
-
-/**
- * \brief Enable i-cache regardles of config file.
- *
- * Required for SRM-ROM decompression.
- **/
-void CAlphaCPU::enable_icache()
-{
-  icache_enabled = true;
-}
-
-/**
- * \brief Enable or disable i-cache depending on config file.
- **/
-void CAlphaCPU::restore_icache()
-{
-  bool  newval;
-
-  newval = myCfg->get_bool_value("icache", false);
-
-  if(!newval)
-    flush_icache();
-
-  icache_enabled = newval;
-}
 
 #if defined(IDB)
 const char*   PAL_NAME[] = {
