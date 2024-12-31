@@ -1,6 +1,6 @@
 # ES40 Alpha System Emulator
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/kreth/es40/CI?label=build)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/kreth/es40/build-test-deploy.yml?branch=main)
 
 Original project at http://www.es40.org (now dead)
 
