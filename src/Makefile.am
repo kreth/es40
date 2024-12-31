@@ -88,6 +88,7 @@ es40_SOURCES = AliM1543C.cpp \
        SystemComponent.cpp \
        System.cpp \
        TraceEngine.cpp \
+       TranslationBuffer.cpp \
        VGA.cpp \
        gui/gui.cpp \
        gui/gui_x11.cpp \
