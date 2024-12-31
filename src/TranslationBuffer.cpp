@@ -29,23 +29,23 @@ void TranslationBuffer::set_pc(u64 p_pc) {
 }
 
 int TranslationBuffer::vmspal_ent_dtbm_double_3(int flags) {
-   cCpu->vmspal_ent_dtbm_double_3(flags);
+   return cCpu->vmspal_ent_dtbm_double_3(flags);
 }
 
 int TranslationBuffer::vmspal_ent_dtbm_single(int flags) {
-   cCpu->vmspal_ent_dtbm_single(flags);
+   return cCpu->vmspal_ent_dtbm_single(flags);
 }
 
 int TranslationBuffer::vmspal_ent_itbm(int flags) {
-   cCpu->vmspal_ent_itbm(flags);
+   return cCpu->vmspal_ent_itbm(flags);
 }
 
 int TranslationBuffer::vmspal_ent_iacv(int flags) {
-   cCpu->vmspal_ent_iacv(flags);
+   return cCpu->vmspal_ent_iacv(flags);
 }
 
 int TranslationBuffer::vmspal_ent_dfault(int flags) {
-   cCpu->vmspal_ent_dfault(flags);
+   return cCpu->vmspal_ent_dfault(flags);
 }
 
 void TranslationBuffer::set_exc_sum(u64 val) {
