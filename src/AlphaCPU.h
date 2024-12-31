@@ -225,6 +225,7 @@
 #include "cpu_defs.h"
 
 class IICache;
+class ITranslationBuffer;
 
 #ifdef IDB
 #define NEXT                        \
@@ -297,6 +298,12 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     u64           get_clean_pc();
     void          next_pc();
     void          set_pc(u64 p_pc);
+      void set_exc_sum(u64 exception_summary);
+      void set_exc_addr(u64 address_of_last_exception);
+      void set_mm_stat(u64 mem_mgmt_status);
+      void set_fault_va(u64 va_of_last_Dmiss_or_fault);
+      
+      
     void          add_pc(u64 a_pc);
 
     u64           get_speed() { return cpu_hz; };
@@ -320,9 +327,10 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     void restore_icache();
       
   private:
-    CThread * myThread;
+    CThread* myThread;
     CSemaphore mySemaphore;
-    IICache * myICache;
+    IICache* myICache;
+    ITranslationBuffer* myTB;
     bool StopThread;
 
     // Instruction Cache
@@ -425,11 +433,13 @@ class CAlphaCPU : public CSystemComponent, public CRunnable
     void            vmspal_call_write_unq();
 
     /* VMS PALcode entry: */
+   public:
     int             vmspal_ent_dtbm_double_3(int flags);
     int             vmspal_ent_dtbm_single(int flags);
     int             vmspal_ent_itbm(int flags);
     int             vmspal_ent_iacv(int flags);
     int             vmspal_ent_dfault(int flags);
+   private:
     int             vmspal_ent_ext_int(int ei);
     int             vmspal_ent_sw_int(int si);
     int             vmspal_ent_ast_int(int ast);
@@ -591,6 +601,22 @@ inline void CAlphaCPU::set_pc(u64 p_pc)
 {
   state.pc = p_pc;
   state.rem_ins_in_page = 0;
+}
+
+inline void CAlphaCPU::set_exc_sum(u64 exception_summary) {
+   state.exc_sum=exception_summary;
+}
+
+inline void CAlphaCPU::set_exc_addr(u64 address_of_last_exception) {
+   state.exc_addr=address_of_last_exception;
+}
+
+inline void CAlphaCPU::set_mm_stat(u64 mem_mgmt_status) {
+   state.mm_stat=mem_mgmt_status;
+}
+
+inline void CAlphaCPU::set_fault_va(u64 va_of_last_Dmiss_or_fault) {
+   state.fault_va=va_of_last_Dmiss_or_fault;
 }
 
 /**

@@ -4,9 +4,6 @@
 
 #include "cpu_defs.h" // Include any necessary cpu_defs for types
 
-/// Number of entries in each Translation Buffer
-#define TB_ENTRIES        16
-
 /// The state structure contains all elements that need to be saved to the statefile
 struct SCPU_state
 {
@@ -59,28 +56,7 @@ struct SCPU_state
       u64   fpcr;         /**< Floating-Point Control Register [HRM p 2-36] */
       bool  bIntrFlag;
       u64   current_pc;   /**< Virtual address of current instruction */
-
-      /**
-       * \brief Translation Buffer Entry.
-       *
-       * A translation buffer entry provides the mapping from a page of virtual memory to a page of physical memory.
-       **/
-      struct STBEntry
-      {
-            u64   virt;         /**< Virtual address of page*/
-            u64   phys;         /**< Physical address of page*/
-            u64   match_mask;   /**< The virtual address has to match for these bits to be a hit*/
-            u64   keep_mask;    /**< This part of the virtual address is OR-ed with the phys address*/
-            int   asn;          /**< Address Space Number*/
-            int   asm_bit;      /**< Address Space Match bit*/
-            int   access[2][4]; /**< Access permitted [read/write][current mode]*/
-            int   fault[3];     /**< Fault on access [read/write/execute]*/
-            bool  valid;        /**< Valid entry*/
-      } tb[2][TB_ENTRIES];  /**< Translation buffer entries */
-
-      int   next_tb[2];     /**< Number of next translation buffer entry to use */
-      int   last_found_tb[2][2];  /**< Number of last translation buffer entry found */
-      u32   rem_ins_in_page;      /**< Number of instructions remaining in current page */
+      u32   rem_ins_in_page;    /**< Number of instructions remaining in current page */
       u64   pc_phys;
       u64   f[64];    /**< Floating point registers (0-31 normal, 32-63 shadow) */
       int   iProcNum; /**< number of the current processor (0 in a 1-processor system) */
