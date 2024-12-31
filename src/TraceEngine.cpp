@@ -166,6 +166,7 @@
 #include "Flash.h"
 #include "lockstep.h"
 #include "DebugOutput.h"
+#include "MiniReadline.h"
 #include <signal.h>
 
 CTraceEngine*   trc;
@@ -231,6 +232,7 @@ CTraceEngine::CTraceEngine(CSystem* sys)
   current_trace_file = stdout;
   bBreakPoint = false;
   dbgOutput = new DebugOutput(this, sys);
+  miniReadline = new MiniReadline();
 }
 
 /**
@@ -799,6 +801,7 @@ void CTraceEngine::run_script(const char* filename)
   char    c = '\0';
   int     j;
   FILE*   f = NULL;
+  std::string cmdLine;
 
   if(filename)
   {
@@ -826,8 +829,14 @@ void CTraceEngine::run_script(const char* filename)
     }
     else
     {
-      printf("IDB %016" PRIx64 " %c>", theSystem->get_cpu(0)->get_clean_pc(),
-             (theSystem->get_cpu(0)->get_pc() & U64(0x1)) ? 'P' : '-');
+       char prompt[80];
+       //printf("IDB %016" PRIx64 " %c>", theSystem->get_cpu(0)->get_clean_pc(),
+       //       (theSystem->get_cpu(0)->get_pc() & U64(0x1)) ? 'P' : '-');
+       snprintf(prompt, 80, "IDB %016" PRIx64 " %c>",
+                theSystem->get_cpu(0)->get_clean_pc(),
+                (theSystem->get_cpu(0)->get_pc() & U64(0x1)) ? 'P' : '-');
+       if(!miniReadline->promptForCommand(prompt))
+          break;
     }
 #endif
     for(i = 0; i < 100;)
@@ -840,7 +849,12 @@ void CTraceEngine::run_script(const char* filename)
       bool  u = false;
       for(j = 0; j < 100;)
       {
-        int r = fscanf(f, "%c", &c);
+        int r;
+        if(filename) {
+           r = fscanf(f, "%c", &c);
+        } else {
+           c = miniReadline->getNextCmdLineChar();
+        }
         if(c != '\n' && c != '\r' && c != ' ' && c != '\t')
         {
           s[i][j++] = c;

@@ -99,6 +99,7 @@
 #include "datatypes.h"
 
 class DebugOutput;
+class MiniReadline;
 
 /// Structure used to define named functions within memory.
 struct STraceFunction
@@ -152,6 +153,7 @@ class CTraceEngine
     void    list_all();
 
     DebugOutput*          dbgOutput;
+    MiniReadline*         miniReadline;  
   protected:
     class CSystem*        cSystem;
     int                   trcfncs;

@@ -75,6 +75,7 @@ es40_SOURCES = AliM1543C.cpp \
        ICache.cpp \
        Keyboard.cpp \
        lockstep.cpp \
+       MiniReadline.cpp \
        PCIDevice.cpp \
        Port80.cpp \
        S3Trio64.cpp \
