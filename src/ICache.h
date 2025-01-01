@@ -18,20 +18,19 @@
 #define ICACHE_BYTE_MASK  (u64) (ICACHE_INDEX_MASK << 2)
 
 #include "IICache.h"
-class CSystemComponent;
+class CAlphaCPU;
 class CConfigurator;
-class CSystem;
 
 class ICache : public IICache
 {
    public:
-      ICache(CConfigurator * cfg, CSystem* system);
+      ICache(CConfigurator * cfg, CAlphaCPU* cpu);
       virtual ~ICache();
-      int get_icache(u64 address, u32* data, SCPU_state &state, CSystemComponent* device) override;
-      void flush_icache(SCPU_state &state) override;
-      void flush_icache_asm(SCPU_state &state) override;
-      void enable_icache(SCPU_state &state) override;
-      void restore_icache(SCPU_state &state) override;
+      int get_icache(u64 address, u32* data, SCPU_state &state, CSystem* system) override;
+      void flush_icache() override;
+      void flush_icache_asm() override;
+      void enable_icache() override;
+      void restore_icache() override;
 
    private:
       /**
@@ -53,6 +52,6 @@ class ICache : public IICache
       int last_found_icache;    /**< Number of last cache entry found */
       bool  icache_enabled;
       CConfigurator* myCfg;
-      CSystem* cSystem;
+      CAlphaCPU* cCpu;
 };
 #endif

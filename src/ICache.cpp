@@ -4,11 +4,10 @@
 #include "cpu_defs.h"
 #include <string.h>
 
-ICache::ICache(CConfigurator * cfg, CSystem* system) : myCfg(cfg), cSystem(system)
+ICache::ICache(CConfigurator * cfg, CAlphaCPU* cpu) : myCfg(cfg), cCpu(cpu)
 {
    next_icache = 0;
    last_found_icache = 0;
-   icache_enabled = true;
    for(int i=0;i < ICACHE_ENTRIES; i++) {
       icache[i].valid = false;
    }
@@ -39,7 +38,7 @@ ICache::~ICache()
  * code, that relies on the correct instruction stream to
  * remain in the cache.
  **/
-int ICache::get_icache(u64 address, u32* data, SCPU_state &state, CSystemComponent* device)
+int ICache::get_icache(u64 address, u32* data, SCPU_state &state, CSystem* system)
 {
    int   i = last_found_icache;
    u64   v_a;
@@ -78,12 +77,12 @@ int ICache::get_icache(u64 address, u32* data, SCPU_state &state, CSystemCompone
       }
       else
       {
-         result = ((CAlphaCPU*)device)->virt2phys(v_a, &p_a, ACCESS_EXEC, &asm_bit, 0);
+         result = cCpu->virt2phys(v_a, &p_a, ACCESS_EXEC, &asm_bit, 0);
          if(result)
             return result;
       }
 
-      memcpy(icache[next_icache].data, cSystem->PtrToMem(p_a),
+      memcpy(icache[next_icache].data, system->PtrToMem(p_a),
              ICACHE_LINE_SIZE * 4);
 
       icache[next_icache].valid = true;
@@ -111,34 +110,31 @@ int ICache::get_icache(u64 address, u32* data, SCPU_state &state, CSystemCompone
    {
       if(!state.rem_ins_in_page)
       {
-         result = ((CAlphaCPU*)device)->virt2phys(address, &state.pc_phys, ACCESS_EXEC, &asm_bit, 0);
+         result = cCpu->virt2phys(address, &state.pc_phys, ACCESS_EXEC, &asm_bit, 0);
          if(result)
             return result;
          state.rem_ins_in_page = 2048 - ((((u32) address) >> 2) & 2047);
       }
    }
 
-   *data = (u32) cSystem->ReadMem(state.pc_phys, 32, device);
+   *data = (u32) system->ReadMem(state.pc_phys, 32, cCpu);
    return 0;
 }
 
 /**
  * Empty the instruction cache.
  **/
-void ICache::flush_icache(SCPU_state &state)
+void ICache::flush_icache()
 {
    if(icache_enabled)
    {
 
-      //  memset(state.icache,0,sizeof(state.icache));
+      //  memset(icache,0,sizeof(icache));
       int i;
       for(i = 0; i < ICACHE_ENTRIES; i++)
       {
          icache[i].valid = false;
-
-         //    state.icache[i].asm_bit = true;
       }
-
       next_icache = 0;
       last_found_icache = 0;
    }
@@ -147,7 +143,7 @@ void ICache::flush_icache(SCPU_state &state)
 /**
  * Empty the instruction cache of lines with the ASM bit clear.
  **/
-void ICache::flush_icache_asm(SCPU_state &state)
+void ICache::flush_icache_asm()
 {
    if(icache_enabled)
    {
@@ -164,7 +160,7 @@ void ICache::flush_icache_asm(SCPU_state &state)
  *
  * Required for SRM-ROM decompression.
  **/
-void ICache::enable_icache(SCPU_state &state)
+void ICache::enable_icache()
 {
    icache_enabled = true;
 }
@@ -172,14 +168,10 @@ void ICache::enable_icache(SCPU_state &state)
 /**
  * \brief Enable or disable i-cache depending on config file.
  **/
-void ICache::restore_icache(SCPU_state &state)
+void ICache::restore_icache()
 {
-   bool  newval;
-
-   newval = myCfg->get_bool_value("icache", false);
-
+   bool newval = myCfg->get_bool_value("icache", false);
    if(!newval)
-      flush_icache(state);
-
+      flush_icache();
    icache_enabled = newval;
 }

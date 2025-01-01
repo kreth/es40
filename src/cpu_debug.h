@@ -500,7 +500,7 @@ void          handle_debug_string(char* s);
     case 14:  sprintf(dbg_strptr, "/Alt/Chk"); break;                               \
     }                                                                               \
     dbg_strptr += strlen(dbg_strptr);                                               \
-    sprintf(dbg_strptr, "r%d, %04xH(r%d)", (REG_1 & 31), (u32) DISP_12, (REG_2 & 31)); \
+    sprintf(dbg_strptr, " r%d, %04xH(r%d)", (REG_1 & 31), (u32) DISP_12, (REG_2 & 31)); \
     dbg_strptr += strlen(dbg_strptr);                                               \
     if(!bListing)                                                                   \
     {                                                                               \
@@ -521,7 +521,7 @@ void          handle_debug_string(char* s);
     case 12:  sprintf(dbg_strptr, "/Alt"); break;                                   \
     }                                                                               \
     dbg_strptr += strlen(dbg_strptr);                                               \
-    sprintf(dbg_strptr, "r%d, %04xH(r%d)", (REG_1 & 31), (u32) DISP_12, (REG_2 & 31)); \
+    sprintf(dbg_strptr, " r%d, %04xH(r%d)", (REG_1 & 31), (u32) DISP_12, (REG_2 & 31)); \
     dbg_strptr += strlen(dbg_strptr);                                               \
     if(!bListing)                                                                   \
     {                                                                               \

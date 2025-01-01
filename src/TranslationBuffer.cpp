@@ -106,7 +106,6 @@ int TranslationBuffer::FindTBEntry(u64 virt, int flags, const SCPU_state &state)
 #define GH_0_MATCH  U64(0x000007ffffffe000) /* <42:13> */
 #define GH_0_PHYS   U64(0x00000fffffffe000) /* <43:13> */
 #define GH_0_KEEP   U64(0x0000000000001fff) /* <12:0>  */
-
 #define GH_1_MATCH  U64(0x000007ffffff0000)
 #define GH_1_PHYS   U64(0x00000fffffff0000)
 #define GH_1_KEEP   U64(0x000000000000ffff)
@@ -220,6 +219,18 @@ void TranslationBuffer::add_tb(u64 virt, u64 pte_phys, u64 pte_flags, int flags,
    }
 #endif
 }
+#undef GH_0_MATCH
+#undef GH_0_PHYS
+#undef GH_0_KEEP
+#undef GH_1_MATCH
+#undef GH_1_PHYS
+#undef GH_1_KEEP
+#undef GH_2_MATCH
+#undef GH_2_PHYS
+#undef GH_2_KEEP
+#undef GH_3_MATCH
+#undef GH_3_PHYS
+#undef GH_3_KEEP
 
 /**
  * \brief Add translation-buffer entry to the DTB

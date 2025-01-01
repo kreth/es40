@@ -72,6 +72,10 @@
  **/
 #define DO_AMASK    state.r[REG_3] = V_2 &~CPU_AMASK;
 
+//  u64 new_pc = state.pal_base | (1 << 13) | ((function & 0x80) << 5) \
+                               | ((function & 0x3f) << 6) | 1;         \
+    fprintf(stderr, "new pc=%016" PRIx64 "\n", new_pc);                \
+
 #define DO_CALL_PAL if(((function < 0x40) && ((state.cm != 0)))        \
                      || ((function > 0x3f) && (function < 0x80))       \
                      || (function > 0xbf))                             \

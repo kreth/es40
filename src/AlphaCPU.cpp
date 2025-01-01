@@ -395,7 +395,7 @@ void CAlphaCPU::run()
  **/
 CAlphaCPU::CAlphaCPU(CConfigurator* cfg, CSystem* system) : CSystemComponent(cfg, system), mySemaphore(0, 1)
 {
-  myICache = new ICache(cfg, system);
+  myICache = new ICache(cfg, this);
   myTB = new TranslationBuffer(this);
   StopThread = false;
 }
@@ -497,16 +497,16 @@ CAlphaCPU::~CAlphaCPU()
 // ICache
 int CAlphaCPU::get_icache(u64 address, u32* data)
 {
-    return myICache->get_icache(address, data, state, this);
+    return myICache->get_icache(address, data, state, cSystem);
 }
 void CAlphaCPU::flush_icache()
 {
-    myICache->flush_icache(state);
+    myICache->flush_icache();
 }
 
 void CAlphaCPU::flush_icache_asm()
 {
-    myICache->flush_icache_asm(state);
+    myICache->flush_icache_asm();
 }
 
 /**
@@ -516,7 +516,7 @@ void CAlphaCPU::flush_icache_asm()
  **/
 void CAlphaCPU::enable_icache()
 {
-   myICache->enable_icache(state);
+   myICache->enable_icache();
 }
 
 /**
@@ -524,7 +524,7 @@ void CAlphaCPU::enable_icache()
  **/
 void CAlphaCPU::restore_icache()
 {
-  myICache->restore_icache(state);
+  myICache->restore_icache();
 }
 
 
