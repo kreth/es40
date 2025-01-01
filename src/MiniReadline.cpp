@@ -44,6 +44,7 @@ bool MiniReadline::promptForCommand(const std::string& prompt) {
       add_history(input);
       lastCommand = input;
       streamPosition = lastCommand.cbegin();
+      return true;
    } else return false;
 }
 
