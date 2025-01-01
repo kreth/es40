@@ -1489,7 +1489,7 @@ void CDEC21143::SetupFilter()
 {
   u8    mac[16][6];
   char  mac_txt[16][20];
-  char  filter[1000];
+  char  filter[800];
   int   i;
   int   j;
   int   numUnique;
@@ -1564,6 +1564,7 @@ void CDEC21143::SetupFilter()
   //There must be at least one unique item; at least the mac of the card
   strcat(filter, "ether dst ");
   strcat(filter, mac_txt[unique[0]]);
+  //FIXME: check filter for overflow
   for(i = 1; i < numUnique; i++)
   {
     strcat(filter, " or ether dst ");
